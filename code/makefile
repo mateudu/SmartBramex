@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS=-g
 BIN=./bin/
-SOURCE=./source/
+SOURCE=./src/
 
 LIST=$(BIN)server $(BIN)client
 
