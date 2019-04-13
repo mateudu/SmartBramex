@@ -1,3 +1,5 @@
+//TODO:Zmodularyzować do funkcji całe działanie klienta
+//-zmodularyzować całe działanie klienta. Tak zeby calosc byla w funkcji i mozna bylo odpalic to z maina bezposrednio
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>

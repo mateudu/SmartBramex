@@ -5,23 +5,40 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <thread>
+#include <stdlib.h>
+#include <string.h>
 
 using namespace std;
 
+#define MAX_BUF 1024
+//TODO:Troche parametryzacjy
+//Potestowac to troche bo w sumie nie wiem czy dziala xdd
+//SOURCE: https://www.geeksforgeeks.org/tcp-and-udp-server-using-select/
+
+
+void handle_new_client(int socket){
+	for(;;){//TODO: add signal handling to end child process
+		//TODO: add heartbeat
+	}
+	return;
+}
+
+
+
 int main(int argc, char* argv[])
 {
-	int sockd, sockd2;
+	int listenfd, connfd, udpfd, maxfdp1, nready;
+	fd_set rset;
+	ssize_t n;
 	socklen_t addrlen;
-	struct sockaddr_in my_name, peer_name;
+	struct sockaddr_in servaddr, peer_name;
 	int status;
-
-	/* create a socket */
-	sockd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockd == -1)
-	{
-		cout<<"Socket creation error"<<endl;
-		return(1);
-	}
+	char buffer[MAX_BUF];
+	int no_child_processes = 0;
+	pid_t child_processes[16];
+	
+	char * message = "aaaa";
 
 	if (argc < 2)
 	{
@@ -29,37 +46,86 @@ int main(int argc, char* argv[])
 		return(1);
 	}
 
-	/* server address  */
-	my_name.sin_family = AF_INET;
-	my_name.sin_addr.s_addr = INADDR_ANY;
-	my_name.sin_port = htons(stoi(argv[1]));
 
-	status = bind(sockd, (struct sockaddr*)&my_name, sizeof(my_name));
-	if (status == -1)
-	{
+	//Create TCP socket
+	listenfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (listenfd == -1)	{
+		cout<<"Socket creation error"<<endl;
+		return(1);
+	}
+
+	//Set server address
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = INADDR_ANY;
+	servaddr.sin_port = htons(stoi(argv[1]));
+
+	// Bind TCP
+	status = bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
+	if (status == -1) {
 		cout<<"Binding error"<<endl;
 		return(1);
 	}
 
-	status = listen(sockd, 5);
-	if (status == -1)
-	{
+	//Set TCP listen
+	status = listen(listenfd, 10);
+	if (status == -1) {
 		cout<<"Listening error"<<endl;
 		return(1);
 	}
 
-	for(;;)
-	{
-		/* wait for a connection */
-		addrlen = sizeof(peer_name);
-		sockd2 = accept(sockd, (struct sockaddr*)&peer_name, &addrlen);
-		if (sockd2 == -1)
-		{
-			cout<<"Wrong connection"<<endl;
-			return(1);
-		}
-		write(sockd2, "Hello!\n", 7);
-		close(sockd2);
-	}
+	/* Creating UDP socket */
+	udpfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE); 
+    // binding server addr structure to udp sockfd 
+    bind(udpfd, (struct sockaddr*)&servaddr, sizeof(servaddr)); 
+  
+    // clear the descriptor set 
+    FD_ZERO(&rset); 
+  
+    // get maxfd 
+    maxfdp1 = max(listenfd, udpfd) + 1; 
+
+
+	for (;;) 
+	{ 
+        // set listenfd and udpfd in readset 
+        FD_SET(listenfd, &rset); 
+        FD_SET(udpfd, &rset); 
+  
+        // select the ready descriptor 
+        nready = select(maxfdp1, &rset, NULL, NULL, NULL); 
+  
+        // if tcp socket is readable then handle 
+        // it by accepting the connection 
+        if (FD_ISSET(listenfd, &rset)) { 
+            addrlen = sizeof(peer_name); 
+            connfd = accept(listenfd, (struct sockaddr*)&peer_name, &addrlen);
+			pid_t child = fork();
+            if (child == 0) {
+				write(connfd, "Hello!\n", 7);
+                handle_new_client(connfd);
+                close(connfd);
+            } 
+			else if(child > 0)
+			{
+				child_processes[no_child_processes] = child;
+				++no_child_processes;
+			}
+			else
+			{
+				//TODO:
+			} 
+        } 
+        // if udp socket is readable receive the message. 
+        if (FD_ISSET(udpfd, &rset)) { 
+            addrlen = sizeof(peer_name); 
+            memset(buffer, 0, sizeof(buffer)); 
+            cout<<"\nMessage from UDP client: "<<endl;
+            n = recvfrom(udpfd, buffer, sizeof(buffer), 0, 
+                         (struct sockaddr*)&peer_name, &addrlen); 
+            cout<<buffer<<endl; 
+            // sendto(udpfd, (const char*)message, sizeof(buffer), 0, 
+            //        (struct sockaddr*)&peer_name, sizeof(peer_name)); 
+        } 
+    } 
 	return 0;
 }
