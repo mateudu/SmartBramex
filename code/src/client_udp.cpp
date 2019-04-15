@@ -1,46 +1,62 @@
 //TODO:
 //-Zrobic zeby sie kompilowalo, ale zeby wygladalo podbnie jak klient tcp
 //-zmodularyzować całe działanie klienta. Tak zeby calosc byla w funkcji i mozna bylo odpalic to z maina bezposrednio
-#include <arpa/inet.h> 
-#include <netinet/in.h> 
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <strings.h> 
-#include <sys/socket.h> 
-#include <sys/types.h> 
-#define PORT 5000 
+#include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #define MAXLINE 1024 
-int main() 
+#define PORT 6969 
+
+using namespace std;
+
+int main(int argc, char* argv[]) 
 { 
     int sockfd; 
     char buffer[MAXLINE]; 
-    char* message = "Hello Server"; 
+    char message[] = "Hello Server"; 
     struct sockaddr_in servaddr; 
-  
-    int n, len; 
+
+    socklen_t n, len; 
+
+    if (argc < 3)	{
+		cout<<"Usage: %s ip_address port_number "<<argv[0]<<endl;
+		return(1);
+	}
+
     // Creating socket file descriptor 
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) { 
-        printf("socket creation failed"); 
-        exit(0); 
-    } 
+    sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_UDPLITE);
+	if (sockfd == -1)
+	{
+		cout<<"Socket creation"<<endl;
+		return(1);
+	}
   
     memset(&servaddr, 0, sizeof(servaddr)); 
   
     // Filling server information 
     servaddr.sin_family = AF_INET; 
-    servaddr.sin_port = htons(PORT); 
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
+    inet_aton(argv[1], &servaddr.sin_addr);
+	servaddr.sin_port = htons(stoi(argv[2]));
+
+
     // send hello message to server 
     sendto(sockfd, (const char*)message, strlen(message), 
            0, (const struct sockaddr*)&servaddr, 
            sizeof(servaddr)); 
   
     // receive server's response 
-    printf("Message from server: "); 
+    cout<<"Message from server: "<<endl; 
     n = recvfrom(sockfd, (char*)buffer, MAXLINE, 
                  0, (struct sockaddr*)&servaddr, 
                  &len); 
-    puts(buffer); 
+    cout<<buffer<<endl; 
     close(sockfd); 
     return 0; 
 } 

@@ -38,45 +38,54 @@ int main(int argc, char* argv[])
 	int no_child_processes = 0;
 	pid_t child_processes[16];
 	
-	char * message = "aaaa";
+	char message[] = "aaaa";
 
 	if (argc < 2)
 	{
-		cout<<"Usage: %s port_number\n"<<argv[0]<<endl;
+		cerr << "Usage: %s port_number\n" << argv[0] << endl;
 		return(1);
 	}
 
-
-	//Create TCP socket
-	listenfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (listenfd == -1)	{
-		cout<<"Socket creation error"<<endl;
+	/* Create TCP socket */
+	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)	
+	{
+		cerr << "TCP socket creation error" << endl;
 		return(1);
 	}
 
-	//Set server address
+	/* Convert port number top integer */
+	int portNumber = stoi(argv[1]);
+	
+	/* Set server address */
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = INADDR_ANY;
 	servaddr.sin_port = htons(stoi(argv[1]));
 
-	// Bind TCP
-	status = bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
-	if (status == -1) {
-		cout<<"Binding error"<<endl;
+	/* Bind TCP address */
+	if ((status = bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr))) == -1) {
+		cerr << "TCP binding error" << endl;
 		return(1);
 	}
 
-	//Set TCP listen
-	status = listen(listenfd, 10);
-	if (status == -1) {
-		cout<<"Listening error"<<endl;
+	/* Set TCP listen */
+	if ((status = listen(listenfd, 10)) == -1) {
+		cerr << "TCP listening error" << endl;
+		return(1);
+	}
+	
+	/* Creating UDP socket before TCP socket (it throws -1) */
+	if ((udpfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE)) == -1) 
+	{
+		cerr << "UDP socket creation error" << endl;
 		return(1);
 	}
 
-	/* Creating UDP socket */
-	udpfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE); 
     // binding server addr structure to udp sockfd 
-    bind(udpfd, (struct sockaddr*)&servaddr, sizeof(servaddr)); 
+    status = bind(udpfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
+	if (status == -1) {
+		cout<<"UDP binding error"<<endl;
+		return(1);
+	} 
   
     // clear the descriptor set 
     FD_ZERO(&rset); 
@@ -123,8 +132,8 @@ int main(int argc, char* argv[])
             n = recvfrom(udpfd, buffer, sizeof(buffer), 0, 
                          (struct sockaddr*)&peer_name, &addrlen); 
             cout<<buffer<<endl; 
-            // sendto(udpfd, (const char*)message, sizeof(buffer), 0, 
-            //        (struct sockaddr*)&peer_name, sizeof(peer_name)); 
+            sendto(udpfd, (const char*)message, sizeof(buffer), 0, 
+                    (struct sockaddr*)&peer_name, sizeof(peer_name)); 
         } 
     } 
 	return 0;

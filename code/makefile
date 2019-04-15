@@ -3,7 +3,7 @@ CFLAGS=-g
 BIN=./bin/
 SOURCE=./src/
 
-LIST=$(BIN)server $(BIN)client
+LIST=$(BIN)server $(BIN)client_tcp $(BIN)client_udp
 
 all: $(LIST)
 

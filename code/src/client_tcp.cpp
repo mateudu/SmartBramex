@@ -10,47 +10,47 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define MAX_BUF 100
+#define MAX_BUF 1024
 
 using namespace std;
 
 int main(int argc, char* argv[])
 {
-	int sockd;
+	int sockfd;
 	int count;
-	struct sockaddr_in serv_name;
+	struct sockaddr_in servaddr;
 	char buf[MAX_BUF];
 	int status;
 
-	if (argc < 3)
-	{
+	if (argc < 3)	{
 		cout<<"Usage: %s ip_address port_number "<<argv[0]<<endl;
 		return(1);
 	}
-	/* create a socket */
-	sockd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockd == -1)
+	
+    // Creating socket file descriptor 
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd == -1)
 	{
 		cout<<"Socket creation"<<endl;
 		return(1);
 	}
 
 	/* server address */ 
-	serv_name.sin_family = AF_INET;
-	inet_aton(argv[1], &serv_name.sin_addr);
-	serv_name.sin_port = htons(stoi(argv[2]));
+	servaddr.sin_family = AF_INET;
+	inet_aton(argv[1], &servaddr.sin_addr);
+	servaddr.sin_port = htons(stoi(argv[2]));
 
 	/* connect to the server */
-	status = connect(sockd, (struct sockaddr*)&serv_name, sizeof(serv_name));
+	status = connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
 	if (status == -1)
 	{
 		cout<<"Connection error"<<endl;
 		return(1);
 	}
 
-	count = read(sockd, buf, MAX_BUF);
+	count = read(sockfd, buf, MAX_BUF);
 	write(1, buf, count);
 
-	close(sockd);
+	close(sockfd);
 	return 0;
 }
