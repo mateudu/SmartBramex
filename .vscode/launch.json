@@ -61,6 +61,87 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Windows: Pipeline TCP Client",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/mnt/c/_GIT/TinSmartBramex/SmartBramex/code/bin/client_tcp",
+            "args": ["127.0.0.1", "7070"],
+            "stopAtEntry": false,
+            "cwd": "/mnt/c/_GIT/TinSmartBramex/SmartBramex/",
+            "environment": [],
+            "externalConsole": true,
+            "pipeTransport": {
+                "debuggerPath": "/usr/bin/gdb",
+                "pipeProgram": "${env:windir}\\system32\\bash.exe",
+                "pipeArgs": ["-c"],
+                "pipeCwd": ""
+            },
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "sourceFileMap": {
+                "/mnt/c": "c:\\"
+            }
+        },
+        {
+            "name": "Windows: Pipeline UDP Client",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/mnt/c/_GIT/TinSmartBramex/SmartBramex/code/bin/client_udp",
+            "args": ["127.0.0.1", "7073"],
+            "stopAtEntry": false,
+            "cwd": "/mnt/c/_GIT/TinSmartBramex/SmartBramex/",
+            "environment": [],
+            "externalConsole": true,
+            "pipeTransport": {
+                "debuggerPath": "/usr/bin/gdb",
+                "pipeProgram": "${env:windir}\\system32\\bash.exe",
+                "pipeArgs": ["-c"],
+                "pipeCwd": ""
+            },
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "sourceFileMap": {
+                "/mnt/c": "c:\\"
+            }
+        },
+        {
+            "name": "Windows: Pipeline Server",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/mnt/c/_GIT/TinSmartBramex/SmartBramex/code/bin/server",
+            "args": ["7074"],
+            "stopAtEntry": false,
+            "cwd": "/mnt/c/_GIT/TinSmartBramex/SmartBramex/",
+            "environment": [],
+            "externalConsole": true,
+            "pipeTransport": {
+                "debuggerPath": "/usr/bin/gdb",
+                "pipeProgram": "${env:windir}\\system32\\bash.exe",
+                "pipeArgs": ["-c"],
+                "pipeCwd": ""
+            },
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "sourceFileMap": {
+                "/mnt/c": "c:\\"
+            }
         }
     ]
 }
