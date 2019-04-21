@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 	}
 	cout << "IPROTO_UDPLITE: " << IPPROTO_UDPLITE << endl;
 	// Create UDP socket
-	udpfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE);
+	udpfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE);
 	if (udpfd == -1){
 		cout << "UDP socket creation error: "<< errno << endl;
 		return(1);
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 	servaddr.sin_port = htons(portNumber);
 
     // binding server addr structure to udp sockfd 
-    status = bind(udpfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
+    status = bind(udpfd, (struct sockaddr*)&servaddr, sizeof(struct sockaddr_in));
 	if (status == -1) {
 		cout<<"UDP binding error: "<< errno <<endl;
 		return(1);
