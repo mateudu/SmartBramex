@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 		cout << "Usage: %s port_number\n" << argv[0] << endl;
 		return(1);
 	}
-	
+	cout << "IPROTO_UDPLITE: " << IPPROTO_UDPLITE << endl;
 	// Create UDP socket
 	udpfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE);
 	if (udpfd == -1){
