@@ -67,14 +67,14 @@ int main(int argc, char* argv[])
 
 	for (;;) 
 	{
-		addrlen = sizeof(peer_name); 
+		addrlen = sizeof(struct sockaddr_in); 
 		memset(buffer, 0, sizeof(buffer)); 
 		cout<<"\nMessage from UDP client: "<<endl;
 		n = recvfrom(udpfd, buffer, sizeof(buffer), 0, 
 						(struct sockaddr*)&peer_name, &addrlen); 
 		cout<<buffer<<endl; 
-		// sendto(udpfd, (const char*)message, sizeof(buffer), 0, 
-		// 		(struct sockaddr*)&peer_name, sizeof(peer_name));
+		sendto(udpfd, (const char*)message, sizeof(buffer), 0, 
+				(struct sockaddr*)&peer_name, sizeof(struct sockaddr_in));
     } 
 	return 0;
 }

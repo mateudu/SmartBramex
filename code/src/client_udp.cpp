@@ -31,9 +31,8 @@ int main(int argc, char* argv[])
 	}
 
     // Creating socket file descriptor 
-    sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_UDPLITE);
-	if (sockfd == -1)
-	{
+    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE);
+	if (sockfd == -1){
 		cout<<"Socket creation"<<endl;
 		return(1);
 	}
@@ -41,7 +40,7 @@ int main(int argc, char* argv[])
     memset(&servaddr, 0, sizeof(servaddr)); 
   
     // Filling server information 
-    servaddr.sin_family = AF_INET; 
+    servaddr.sin_family = AF_INET;
     inet_aton(argv[1], &servaddr.sin_addr);
 	servaddr.sin_port = htons(stoi(argv[2]));
 
@@ -49,7 +48,7 @@ int main(int argc, char* argv[])
     // send hello message to server 
     sendto(sockfd, (const char*)message, strlen(message), 
            0, (const struct sockaddr*)&servaddr, 
-           sizeof(servaddr)); 
+           sizeof(struct sockaddr_in)); 
   
     // receive server's response 
     cout<<"Message from server: "<<endl; 
