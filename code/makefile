@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-g
+CFLAGS=-g -std=c++11 -pthread
 BIN=./bin/
 SOURCE=./src/
 
