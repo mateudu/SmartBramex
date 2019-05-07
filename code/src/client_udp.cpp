@@ -1,6 +1,3 @@
-//TODO:
-//-Zrobic zeby sie kompilowalo, ale zeby wygladalo podbnie jak klient tcp
-//-zmodularyzować całe działanie klienta. Tak zeby calosc byla w funkcji i mozna bylo odpalic to z maina bezposrednio
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -12,44 +9,48 @@
 #include <unistd.h>
 #include <thread>
 
-#define MAXLINE 1024 
-#define PORT 6969 
+#include "header/socket_helper.h"
 
 using namespace std;
 
-struct addr_info{
-    struct sockaddr_in* addr_info;
-    int fd;
-};
 
-void handleSendMessageThread(struct addr_info& addr){
+void handleSendMessage(struct addr_info& addr){
     int messageFD = addr.fd;
     struct sockaddr_in* servAddr = addr.addr_info;
     char message[] = "Hello Server"; 
 
-
+    for(int i = 0;++i;i<10){
     // send hello message to server 
     sendto(messageFD, (const char*)message, strlen(message), 
            0, (const struct sockaddr*)servAddr, 
            sizeof(struct sockaddr_in)); 
+
+    cout<<"Message sent"<<endl;
+
+    sleep(3);
   
-    // receive server's response 
-    cout<<"Message from server: "<<endl; 
-    socklen_t n, len;
-    char buffer[MAXLINE];
-
-    n = recvfrom(messageFD, (char*)buffer, MAXLINE, 
-                 0, (struct sockaddr*)servAddr, 
-                 &len);
-
-    cout<<buffer<<endl;
+    }
 }
 
-void handleGetMessageThread(struct addr_info &addr){
+void handleGetMessage(struct addr_info& addr){
+    int messageFD = addr.fd;
+    struct sockaddr_in* servAddr = addr.addr_info;
+    size_t n;
+    socklen_t addrlen;
+    char buffer[MAX_BUF];
 
+    addrlen = sizeof(struct sockaddr_in);
+
+    for(;;){
+        n = recvfrom(messageFD, (char*)buffer, MAX_BUF, 
+                    0, (struct sockaddr*)servAddr, 
+                    &addrlen);
+
+        cout<<"Message from server: "<<buffer<<endl; 
+    }
 }
 
-void handleHeartbeat(struct addr_info &addr){
+void handleHeartbeat(struct addr_info& addr){
 
 }
 
@@ -57,51 +58,26 @@ void handleHeartbeat(struct addr_info &addr){
 
 int main(int argc, char* argv[]) 
 { 
-    int messageFD, heartbeatFD;
-    struct sockaddr_in messageServAddr, heartbeatServAddr;
-
-
     if (argc < 3)	{
 		cout<<"Usage: %s ip_address port_number "<<argv[0]<<endl;
 		return(1);
 	}
 
-    // Creating message file descriptor 
-    messageFD = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE);
-	if (messageFD == -1){
-		cout<<"Socket creation"<<endl;
-		return(1);
-	}
-  
-    memset(&messageServAddr, 0, sizeof(messageServAddr)); 
-  
-    messageServAddr.sin_family = AF_INET;
-    inet_aton(argv[1], &messageServAddr.sin_addr);
-	messageServAddr.sin_port = htons(stoi(argv[2]));
+    
+    int portNumber = atoi(argv[2]);
 
-    struct addr_info messageInfo = {&messageServAddr, messageFD};
+    struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1]);
+    struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1]);
 
-    // Creating heartbeat file descriptor 
-    heartbeatFD = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE);
-	if (heartbeatFD == -1){
-		cout<<"Socket creation"<<endl;
-		return(1);
-	}
-  
-    memset(&heartbeatServAddr, 0, sizeof(heartbeatServAddr)); 
-  
-    heartbeatServAddr.sin_family = AF_INET;
-    inet_aton(argv[1], &heartbeatServAddr.sin_addr);
-	heartbeatServAddr.sin_port = htons(stoi(argv[2]) + 1);
 
-    struct addr_info heartbeatInfo = {&heartbeatServAddr, heartbeatFD};
-
-    std::thread thread_sendMessages(handleSendMessageThread, ref(messageInfo));
-    std::thread thread_getMessages(handleGetMessageThread, ref(messageInfo));
-    std::thread thread_heartbeat(handleHeartbeat, ref(heartbeatInfo));
+    std::thread thread_sendMessages(handleSendMessage, ref(*messageInfo));
+    std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
+    //std::thread thread_heartbeat(handleHeartbeat, ref(heartbeatInfo));
     
     thread_sendMessages.join();
+    thread_getMessages.join();
     
-    close(messageFD); 
+    close(messageInfo->fd); 
+    close(heartbeatInfo->fd);
     return 0; 
 } 

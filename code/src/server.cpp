@@ -10,71 +10,74 @@
 #include <string.h>
 #include <errno.h>
 
+#include "header/socket_helper.h"
+
 using namespace std;
 
-#define MAX_BUF 1024
-//TODO:Troche parametryzacjy
+
+void handleGetMessage(struct addr_info& addr){
+    int messageFD = addr.fd;
+    struct sockaddr_in* peerAddr = addr.addr_info;
+	ssize_t n;
+	socklen_t addrlen;
+	char buffer[MAX_BUF];
+    char message[] = "aaaaa"; 
+
+	addrlen = sizeof(struct sockaddr_in);
 
 
-void handle_new_client(int socket){
-	for(;;){//TODO: add signal handling to end child process
-		//TODO: add heartbeat
-	}
-	return;
+    for (;;) 
+	{
+		n = recvfrom(messageFD, buffer, sizeof(buffer), 0, 
+						(struct sockaddr*)peerAddr, &addrlen); 
+
+		cout<<"\nMessage from UDP client: "<<endl;
+		cout<<buffer<<endl; 
+		//if message == cos then costam
+		 sendto(messageFD, (const char*)message, sizeof(buffer), 0, 
+		 		(struct sockaddr*)peerAddr, addrlen);
+    } 
+}
+
+void handleHeartbeat(struct addr_info& addr){
+
 }
 
 
 
 int main(int argc, char* argv[])
 {
-	int listenfd, connfd, udpfd, maxfdp1, nready;
-	fd_set rset;
-	ssize_t n;
-	socklen_t addrlen;
-	struct sockaddr_in servaddr, peer_name;
-	int status;
-	char buffer[MAX_BUF];
-	
-	char message[] = "aaaa";
-
 	if (argc < 2)
 	{
 		cout << "Usage: %s port_number\n" << argv[0] << endl;
 		return(1);
 	}
 	cout << "IPROTO_UDPLITE: " << IPPROTO_UDPLITE << endl;
-	// Create UDP socket
-	udpfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDPLITE);
-	if (udpfd == -1){
-		cout << "UDP socket creation error: "<< errno << endl;
-		return(1);
-	}
 
 	// Convert port number top integer 
-	int portNumber = stoi(argv[1]);
-	
-	// Set server address 
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = INADDR_ANY;
-	servaddr.sin_port = htons(portNumber);
+	int portNumber = atoi(argv[1]);
+
+	struct addr_info* messageInfo = createUdpLiteSocket(portNumber);
+	struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1);
 
     // binding server addr structure to udp sockfd 
-    status = bind(udpfd, (struct sockaddr*)&servaddr, sizeof(struct sockaddr_in));
+    int status = bind(messageInfo->fd, (struct sockaddr*)messageInfo->addr_info, sizeof(struct sockaddr_in));
 	if (status == -1) {
 		cout<<"UDP binding error: "<< errno <<endl;
-		return(1);
+		throw "UDP binding error";
 	}
 
-	for (;;) 
-	{
-		addrlen = sizeof(struct sockaddr_in); 
-		memset(buffer, 0, sizeof(buffer)); 
-		cout<<"\nMessage from UDP client: "<<endl;
-		n = recvfrom(udpfd, buffer, sizeof(buffer), 0, 
-						(struct sockaddr*)&peer_name, &addrlen); 
-		cout<<buffer<<endl; 
-		sendto(udpfd, (const char*)message, sizeof(buffer), 0, 
-				(struct sockaddr*)&peer_name, sizeof(struct sockaddr_in));
-    } 
+    status = bind(heartbeatInfo->fd, (struct sockaddr*)heartbeatInfo->addr_info, sizeof(struct sockaddr_in));
+	if (status == -1) {
+		cout<<"UDP binding error: "<< errno <<endl;
+		throw "UDP binding error";
+	}
+
+
+    std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
+	//std::thread thread_heartbeat(handleHeartbeat, heartbeatInfo);
+
+	thread_getMessages.join();
+	
 	return 0;
 }
