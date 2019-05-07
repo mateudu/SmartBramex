@@ -31,16 +31,40 @@ void handleGetMessage(struct addr_info& addr){
 		n = recvfrom(messageFD, buffer, sizeof(buffer), 0, 
 						(struct sockaddr*)peerAddr, &addrlen); 
 
-		cout<<"\nMessage from UDP client: "<<endl;
-		cout<<buffer<<endl; 
-		//if message == cos then costam
-		 sendto(messageFD, (const char*)message, sizeof(buffer), 0, 
+        cout<<"heartbeatGot: "<<buffer<<endl;
+		
+		sendto(messageFD, (const char*)message, sizeof(buffer), 0, 
 		 		(struct sockaddr*)peerAddr, addrlen);
+
+		cout<<"heartbeatSent"<<endl;
     } 
 }
 
 void handleHeartbeat(struct addr_info& addr){
+	int heartbeatFD = addr.fd;
+    struct sockaddr_in* servAddr = addr.addr_info;
+    size_t n;
+    socklen_t addrlen;
+    char message[] = "Heartbeat: Server"; 
+    char buffer[MAX_BUF];
 
+    addrlen = sizeof(struct sockaddr_in);
+
+    for(;;){
+
+        n = recvfrom(heartbeatFD, (char*)buffer, MAX_BUF, 
+                        0, (struct sockaddr*)servAddr, 
+                        &addrlen);
+        
+        cout<<"heartbeatGot: "<<buffer<<endl; 
+
+
+        sendto(heartbeatFD, (const char*)message, strlen(message), 
+            0, (const struct sockaddr*)servAddr, 
+            addrlen); 
+
+        cout<<"heartbeatSent"<<endl;
+    }
 }
 
 
@@ -75,9 +99,10 @@ int main(int argc, char* argv[])
 
 
     std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
-	//std::thread thread_heartbeat(handleHeartbeat, heartbeatInfo);
+	std::thread thread_heartbeat(handleHeartbeat, ref(*heartbeatInfo));
 
 	thread_getMessages.join();
+	thread_heartbeat.join();
 	
 	return 0;
 }
