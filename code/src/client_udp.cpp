@@ -12,26 +12,24 @@
 #include "header/socket_helper.h"
 
 using namespace std;
-
+//temporary
+std::string messageToSend;
 
 void handleSendMessage(struct addr_info& addr){
     int messageFD = addr.fd;
     struct sockaddr_in* servAddr = addr.addr_info;
     socklen_t addrlen;
-    char message[] = "Hello Server"; 
 
     addrlen = sizeof(struct sockaddr_in);
+    
+    for(;;){
+        sendto(messageFD, (const char*)messageToSend.c_str(), messageToSend.length(), 
+            0, (const struct sockaddr*)servAddr, 
+            addrlen); 
 
-    for(int i = 0;++i;i<10){
-    // send hello message to server 
-    sendto(messageFD, (const char*)message, strlen(message), 
-           0, (const struct sockaddr*)servAddr, 
-           addrlen); 
+        cout<<"Message sent"<<endl;
 
-    cout<<"Message sent"<<endl;
-
-    sleep(3);
-  
+        sleep(5);
     }
 }
 
@@ -58,7 +56,10 @@ void handleHeartbeat(struct addr_info& addr){
     struct sockaddr_in* servAddr = addr.addr_info;
     size_t n;
     socklen_t addrlen;
-    char message[] = "Heartbeat: Client"; 
+    //temporary
+    std::string msg = "Heartbeat: ";
+    msg += messageToSend;
+    //temporary
     char buffer[MAX_BUF];
 
     addrlen = sizeof(struct sockaddr_in);
@@ -70,11 +71,11 @@ void handleHeartbeat(struct addr_info& addr){
 
     for(;;){
         // send hello message to server 
-        sendto(heartbeatFD, (const char*)message, strlen(message), 
+        sendto(heartbeatFD, (const char*)msg.c_str(), msg.length(), 
             0, (const struct sockaddr*)servAddr, 
             addrlen); 
 
-        cout<<"heartbeatSent"<<endl;
+        cout<<"Heartbeat sent"<<endl;
 
         n = recvfrom(heartbeatFD, (char*)buffer, MAX_BUF, 
                         0, (struct sockaddr*)servAddr, 
@@ -85,7 +86,7 @@ void handleHeartbeat(struct addr_info& addr){
             throw "Connection lost";
         }
         
-        cout<<"heartbeatGot: "<<buffer<<endl; 
+        cout<<"Heartbeat got: "<<buffer<<endl; 
 
         sleep(1);
     }
@@ -95,28 +96,19 @@ void handleHeartbeat(struct addr_info& addr){
 
 int main(int argc, char* argv[]) 
 { 
-    if (argc < 3)	{
-		cout<<"Usage: %s ip_address port_number "<<argv[0]<<endl;
+    if (argc < 4)	{
+		cout<<"Usage: %s ip_address port_number client_number "<<argv[0]<<endl;
 		return(1);
 	}
 
     
     int portNumber = atoi(argv[2]);
 
+    std::string clientId = argv[3];
+    messageToSend = "Client " + clientId;
+
     struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1]);
     struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1]);
-
-    // int status = bind(messageInfo->fd, (struct sockaddr*)messageInfo->addr_info, sizeof(struct sockaddr_in));
-	// if (status == -1) {
-	// 	cout<<"UDP binding error: "<< errno <<endl;
-	// 	throw "UDP binding error";
-	// }
-
-    // status = bind(heartbeatInfo->fd, (struct sockaddr*)heartbeatInfo->addr_info, sizeof(struct sockaddr_in));
-	// if (status == -1) {
-	// 	cout<<"UDP binding error: "<< errno <<endl;
-	// 	throw "UDP binding error";
-	// }
 
     std::thread thread_sendMessages(handleSendMessage, ref(*messageInfo));
     std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));

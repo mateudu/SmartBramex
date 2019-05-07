@@ -21,22 +21,21 @@ void handleGetMessage(struct addr_info& addr){
 	ssize_t n;
 	socklen_t addrlen;
 	char buffer[MAX_BUF];
-    char message[] = "aaaaa"; 
 
 	addrlen = sizeof(struct sockaddr_in);
 
-
     for (;;) 
 	{
+		memset(buffer, 0, strlen(buffer));
 		n = recvfrom(messageFD, buffer, sizeof(buffer), 0, 
 						(struct sockaddr*)peerAddr, &addrlen); 
 
-        cout<<"heartbeatGot: "<<buffer<<endl;
+        cout<<"Message got: "<<buffer<<endl;
 		
-		sendto(messageFD, (const char*)message, sizeof(buffer), 0, 
+		sendto(messageFD, (const char*)buffer, sizeof(buffer), 0, 
 		 		(struct sockaddr*)peerAddr, addrlen);
 
-		cout<<"heartbeatSent"<<endl;
+		cout<<"Message sent"<<endl;
     } 
 }
 
@@ -51,19 +50,20 @@ void handleHeartbeat(struct addr_info& addr){
     addrlen = sizeof(struct sockaddr_in);
 
     for(;;){
-
+		memset(buffer, 0, strlen(buffer));
+		
         n = recvfrom(heartbeatFD, (char*)buffer, MAX_BUF, 
                         0, (struct sockaddr*)servAddr, 
                         &addrlen);
         
-        cout<<"heartbeatGot: "<<buffer<<endl; 
+        cout<<"Heartbeat got: "<<buffer<<endl; 
 
 
-        sendto(heartbeatFD, (const char*)message, strlen(message), 
+        sendto(heartbeatFD, (const char*)buffer, strlen(buffer), 
             0, (const struct sockaddr*)servAddr, 
             addrlen); 
 
-        cout<<"heartbeatSent"<<endl;
+        cout<<"Heartbeat sent"<<endl;
     }
 }
 
