@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/udp.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdio.h>
@@ -19,4 +20,9 @@ struct addr_info{
     int fd;
 };
 
-struct addr_info* createUdpLiteSocket(int port, char *address = nullptr);
+struct chcksum{
+    string clientID;
+    int messageID;
+};
+
+struct addr_info* createUdpLiteSocket(int port, char *address = nullptr, struct chcksum checksum);

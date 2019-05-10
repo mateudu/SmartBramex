@@ -67,8 +67,7 @@ void handleHeartbeat(struct addr_info& addr){
     struct timeval tv;
     tv.tv_sec = 15;
     tv.tv_usec = 0;
-    setsockopt(heartbeatFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-
+    
     for(;;){
         // send hello message to server 
         sendto(heartbeatFD, (const char*)msg.c_str(), msg.length(), 
@@ -107,8 +106,12 @@ int main(int argc, char* argv[])
     std::string clientId = argv[3];
     messageToSend = "Client " + clientId;
 
-    struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1]);
-    struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1]);
+    struct chcksum* checksum = new chcksum;
+    checksum->clientID = clientId;
+    checksum->messageID = -1;
+
+    struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1], sizeof(&checksum));
+    struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1],0);
 
     std::thread thread_sendMessages(handleSendMessage, ref(*messageInfo));
     std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
