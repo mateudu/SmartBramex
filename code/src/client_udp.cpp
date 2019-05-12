@@ -12,18 +12,29 @@
 #include "header/socket_helper.h"
 
 using namespace std;
-//temporary
-std::string messageToSend;
+
+int client_id;
+size_t message_id = 0;
+Status client_status = active;
 
 void handleSendMessage(struct addr_info& addr){
     int messageFD = addr.fd;
     struct sockaddr_in* servAddr = addr.addr_info;
     socklen_t addrlen;
-
     addrlen = sizeof(struct sockaddr_in);
+    char buffer[MAX_BUF];
+
+    struct checksum message_metadata;
     
     for(;;){
-        sendto(messageFD, (const char*)messageToSend.c_str(), messageToSend.length(), 
+        memset(buffer, 0, MAX_BUF);
+        message_id += 1;
+        message_metadata.clientID = client_id;
+        message_metadata.messageID = message_id;
+        message_metadata.statusID = active;
+
+        generate_message(buffer, message_metadata, "abcdef");
+        sendto(messageFD, (const char*)buffer, sizeof(buffer), 
             0, (const struct sockaddr*)servAddr, 
             addrlen); 
 
@@ -56,17 +67,11 @@ void handleHeartbeat(struct addr_info& addr){
     struct sockaddr_in* servAddr = addr.addr_info;
     size_t n;
     socklen_t addrlen;
-    //temporary
-    std::string msg = "Heartbeat: ";
-    msg += messageToSend;
-    //temporary
+    //Doesn't matter what the message is, we just want to send anything through
+    std::string msg = "Heartbeat";
     char buffer[MAX_BUF];
 
-    addrlen = sizeof(struct sockaddr_in);
-
-    struct timeval tv;
-    tv.tv_sec = 15;
-    tv.tv_usec = 0;
+    addrlen = sizeof(struct sockaddr_in);    
     
     for(;;){
         // send hello message to server 
@@ -85,12 +90,11 @@ void handleHeartbeat(struct addr_info& addr){
             throw "Connection lost";
         }
         
-        cout<<"Heartbeat got: "<<buffer<<endl; 
+        cout<<"\tHeartbeat response received: "<<buffer<<endl; 
 
-        sleep(1);
+        sleep(8);
     }
 }
-
 
 
 int main(int argc, char* argv[]) 
@@ -102,16 +106,13 @@ int main(int argc, char* argv[])
 
     
     int portNumber = atoi(argv[2]);
+    client_id = stoi(argv[3]);
 
-    std::string clientId = argv[3];
-    messageToSend = "Client " + clientId;
+    struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1]);
+    struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1]);
 
-    struct chcksum* checksum = new chcksum;
-    checksum->clientID = clientId;
-    checksum->messageID = -1;
-
-    struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1], sizeof(&checksum));
-    struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1],0);
+    set_checksum_on_socket(messageInfo->fd, sizeof(struct checksum), UDPLITE_SEND_CSCOV);
+    set_timeout_on_socket(heartbeatInfo->fd, 33);
 
     std::thread thread_sendMessages(handleSendMessage, ref(*messageInfo));
     std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
@@ -119,6 +120,7 @@ int main(int argc, char* argv[])
     
     thread_sendMessages.join();
     thread_getMessages.join();
+    thread_heartbeat.join();
     
     close(messageInfo->fd); 
     close(heartbeatInfo->fd);
