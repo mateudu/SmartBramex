@@ -1,4 +1,8 @@
 **/bin/
+.vscode/
+/.vs/Project_TIN_lua/v15
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
 .vscode/ipch
 /.vs/Project_TIN_lua/v15
 /.vs
