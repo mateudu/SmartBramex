@@ -1,3 +1,8 @@
+-- Projekt: SmartBramex
+-- Funkcja: Modul Wireshark
+-- Ostatnia zmiana: 12/05/2019
+-- Autor: Sebastian Kamoda
+
 bramex_proto = Proto("bramex", "Bramex Protocol dissector")
 
 local client_id = ProtoField.new("Client Id", "bramex.client_id", ftypes.UINT64)
