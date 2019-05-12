@@ -12,18 +12,30 @@
 #include "header/socket_helper.h"
 
 using namespace std;
-//temporary
-std::string messageToSend;
+
+int client_id;
+size_t message_id = 0;
+status client_status = status_active;
 
 void handleSendMessage(struct addr_info& addr){
     int messageFD = addr.fd;
     struct sockaddr_in* servAddr = addr.addr_info;
     socklen_t addrlen;
-
     addrlen = sizeof(struct sockaddr_in);
+    char buffer[MAX_BUF];
+
+    struct metadata message_metadata;
     
     for(;;){
-        sendto(messageFD, (const char*)messageToSend.c_str(), messageToSend.length(), 
+        memset(buffer, 0, MAX_BUF);
+        message_id += 1;
+        message_metadata.client_id = client_id;
+        message_metadata.message_id = message_id;
+        message_metadata.status_id = client_status;
+        message_metadata.message_type_id = message_type_data;
+
+        generate_message(buffer, message_metadata, "abcdef");
+        sendto(messageFD, (const char*)buffer, sizeof(buffer), 
             0, (const struct sockaddr*)servAddr, 
             addrlen); 
 
@@ -56,19 +68,12 @@ void handleHeartbeat(struct addr_info& addr){
     struct sockaddr_in* servAddr = addr.addr_info;
     size_t n;
     socklen_t addrlen;
-    //temporary
-    std::string msg = "Heartbeat: ";
-    msg += messageToSend;
-    //temporary
+    //Doesn't matter what the message is, we just want to send anything through
+    std::string msg = "Heartbeat";
     char buffer[MAX_BUF];
 
-    addrlen = sizeof(struct sockaddr_in);
-
-    struct timeval tv;
-    tv.tv_sec = 15;
-    tv.tv_usec = 0;
-    setsockopt(heartbeatFD, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-
+    addrlen = sizeof(struct sockaddr_in);    
+    
     for(;;){
         // send hello message to server 
         sendto(heartbeatFD, (const char*)msg.c_str(), msg.length(), 
@@ -86,12 +91,11 @@ void handleHeartbeat(struct addr_info& addr){
             throw "Connection lost";
         }
         
-        cout<<"Heartbeat got: "<<buffer<<endl; 
+        cout<<"\tHeartbeat response received: "<<buffer<<endl; 
 
-        sleep(1);
+        sleep(8);
     }
 }
-
 
 
 int main(int argc, char* argv[]) 
@@ -103,12 +107,13 @@ int main(int argc, char* argv[])
 
     
     int portNumber = atoi(argv[2]);
-
-    std::string clientId = argv[3];
-    messageToSend = "Client " + clientId;
+    client_id = stoi(argv[3]);
 
     struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1]);
     struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1]);
+
+    set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_SEND_CSCOV);
+    set_timeout_on_socket(heartbeatInfo->fd, 33);
 
     std::thread thread_sendMessages(handleSendMessage, ref(*messageInfo));
     std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
@@ -116,6 +121,7 @@ int main(int argc, char* argv[])
     
     thread_sendMessages.join();
     thread_getMessages.join();
+    thread_heartbeat.join();
     
     close(messageInfo->fd); 
     close(heartbeatInfo->fd);
