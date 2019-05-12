@@ -9,17 +9,56 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <unordered_map>
+#include <vector>
+#include <list>
 
 #include "header/socket_helper.h"
 
 using namespace std;
+struct client_info{
+	list<size_t> missing_messages_id;
+	size_t expected_message_id;
+};
+
+unordered_map<int, struct client_info> clients;
+
+void process_message(struct metadata& metadata_struct, string& content)
+{
+	int client_id = metadata_struct.client_id;
+	size_t message_id = metadata_struct.message_id;
+
+	switch (metadata_struct.message_type_id)
+	{
+	case message_type_data:
+		if (clients[client_id].expected_message_id != message_id && message_id != 1){
+			cout << "Registered a missing message. Message ID: " << clients[client_id].expected_message_id << endl;
+			//we missed a message; add it to the missing list
+			clients[client_id].missing_messages_id.push_back(clients[client_id].expected_message_id);
+		}
+
+		//do sth
+		clients[client_id].expected_message_id = message_id + 1;
+		break;
+
+	case message_type_data_request_response:
+		cout << "Received a missing message. Message ID: " << metadata_struct.message_id << endl;
+		//We have received a missing message so we no longer need it
+		clients[metadata_struct.client_id].missing_messages_id.remove(metadata_struct.message_id);
+		break;
+
+	default:
+		throw "Unknown/Unhandled message type!";
+		break;
+	}
+}
 
 void handleGetMessage(struct addr_info& addr){
     int messageFD = addr.fd;
     struct sockaddr_in* peerAddr = addr.addr_info;
 	ssize_t n;
 	socklen_t addrlen;
-	struct checksum message_metadata;
+	struct metadata message_metadata;
 	string message_content;
 	char buffer[MAX_BUF];
 
@@ -34,10 +73,13 @@ void handleGetMessage(struct addr_info& addr){
 		get_message_metadata(message_metadata, buffer);
 		string message_content = get_message_content(buffer);
         cout<<	"Message received: " <<endl\
-			<<	"\tClientID: "		<< message_metadata.clientID <<endl\
-			<<	"\tMessageID: "		<< message_metadata.messageID <<endl\
-			<<	"\tStatus: "		<< message_metadata.statusID <<endl\
-			<< 	"\tContent: "		<< message_content << endl;
+			<<	"\tClientID: "		<< message_metadata.client_id <<endl\
+			<<	"\tMessageID: "		<< message_metadata.message_id <<endl\
+			<<	"\tStatus: "		<< message_metadata.status_id <<endl\
+			<<	"\tType: "			<< message_metadata.message_type_id <<endl\
+			<< 	"\tContent: "		<< message_content <<endl;
+
+		process_message(message_metadata, message_content);
 		
 		sendto(messageFD, (const char*)message_content.c_str(), message_content.length(),
 				0, (struct sockaddr*)peerAddr, 
@@ -103,7 +145,7 @@ int main(int argc, char* argv[])
 		throw "UDP binding error";
 	}
 
-	set_checksum_on_socket(messageInfo->fd, sizeof(struct checksum), UDPLITE_RECV_CSCOV);
+	set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_RECV_CSCOV);
 
     std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
 	std::thread thread_heartbeat(handleHeartbeat, ref(*heartbeatInfo));

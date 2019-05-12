@@ -15,7 +15,7 @@ using namespace std;
 
 int client_id;
 size_t message_id = 0;
-Status client_status = active;
+status client_status = status_active;
 
 void handleSendMessage(struct addr_info& addr){
     int messageFD = addr.fd;
@@ -24,14 +24,15 @@ void handleSendMessage(struct addr_info& addr){
     addrlen = sizeof(struct sockaddr_in);
     char buffer[MAX_BUF];
 
-    struct checksum message_metadata;
+    struct metadata message_metadata;
     
     for(;;){
         memset(buffer, 0, MAX_BUF);
         message_id += 1;
-        message_metadata.clientID = client_id;
-        message_metadata.messageID = message_id;
-        message_metadata.statusID = active;
+        message_metadata.client_id = client_id;
+        message_metadata.message_id = message_id;
+        message_metadata.status_id = client_status;
+        message_metadata.message_type_id = message_type_data;
 
         generate_message(buffer, message_metadata, "abcdef");
         sendto(messageFD, (const char*)buffer, sizeof(buffer), 
@@ -111,7 +112,7 @@ int main(int argc, char* argv[])
     struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1]);
     struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1]);
 
-    set_checksum_on_socket(messageInfo->fd, sizeof(struct checksum), UDPLITE_SEND_CSCOV);
+    set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_SEND_CSCOV);
     set_timeout_on_socket(heartbeatInfo->fd, 33);
 
     std::thread thread_sendMessages(handleSendMessage, ref(*messageInfo));
