@@ -43,3 +43,4 @@ void generate_message(char buffer[], struct checksum& metadata, string content);
 void get_message_metadata(checksum& checksum_struct, char* buffer);
 
 string get_message_content(char* buffer);
+
