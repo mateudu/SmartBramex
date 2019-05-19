@@ -45,3 +45,4 @@ void generate_message(char buffer[], struct metadata& metadata, string content);
 void get_message_metadata(struct metadata& metadata_struct, char* buffer);
 
 string get_message_content(char* buffer);
+

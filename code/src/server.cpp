@@ -155,3 +155,13 @@ int main(int argc, char* argv[])
 	
 	return 0;
 }
+
+int add(int i, int j)
+{
+    return i + j;
+}
+
+int multiply(int a, int b)
+{
+	return a*b;
+}
