@@ -1,4 +1,4 @@
-#include <iostream>
+/*#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -9,11 +9,14 @@
 #include <unistd.h>
 #include <thread>
 
-#include "header/socket_helper.h"
+#include "header/socket_helper.h"*/
+
+#include "header/client_udp.h"
 
 using namespace std;
 
-int client_id;
+
+/*int client_id;
 size_t message_id = 0;
 Status client_status = active;
 
@@ -95,7 +98,7 @@ void handleHeartbeat(struct addr_info& addr){
         sleep(8);
     }
 }
-
+*/
 
 int main(int argc, char* argv[]) 
 { 
@@ -104,19 +107,21 @@ int main(int argc, char* argv[])
 		return(1);
 	}
 
-    
-    int portNumber = atoi(argv[2]);
-    client_id = stoi(argv[3]);
+    /*Client_udp *client = new Client_udp();
+    client->portNumber = atoi(argv[2]);
+    client->client_id = stoi(argv[3]);*/
 
-    struct addr_info* messageInfo = createUdpLiteSocket(portNumber, argv[1]);
-    struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1, argv[1]);
+    Client_udp *client = new Client_udp(argc, argv);
+
+    struct addr_info* messageInfo = createUdpLiteSocket(client->portNumber, argv[1]);
+    struct addr_info* heartbeatInfo = createUdpLiteSocket(client->portNumber + 1, argv[1]);
 
     set_checksum_on_socket(messageInfo->fd, sizeof(struct checksum), UDPLITE_SEND_CSCOV);
     set_timeout_on_socket(heartbeatInfo->fd, 33);
 
-    std::thread thread_sendMessages(handleSendMessage, ref(*messageInfo));
-    std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
-    std::thread thread_heartbeat(handleHeartbeat, ref(*heartbeatInfo));
+    std::thread thread_sendMessages(client->handleSendMessage, ref(*messageInfo));
+    std::thread thread_getMessages(client->handleGetMessage, ref(*messageInfo));
+    std::thread thread_heartbeat(client->handleHeartbeat, ref(*heartbeatInfo));
     
     thread_sendMessages.join();
     thread_getMessages.join();

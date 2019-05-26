@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+/*#include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -10,10 +10,12 @@
 #include <string.h>
 #include <errno.h>
 
-#include "header/socket_helper.h"
+#include "header/socket_helper.h"*/
+
+#include "header/server.h"
 
 using namespace std;
-
+/*
 void handleGetMessage(struct addr_info& addr){
     int messageFD = addr.fd;
     struct sockaddr_in* peerAddr = addr.addr_info;
@@ -73,7 +75,7 @@ void handleHeartbeat(struct addr_info& addr){
         cout<<"\tHeartbeat response sent"<<endl;
     }
 }
-
+*/
 
 int main(int argc, char* argv[])
 {
@@ -85,10 +87,12 @@ int main(int argc, char* argv[])
 	cout << "IPROTO_UDPLITE: " << IPPROTO_UDPLITE << endl;
 
 	// Convert port number top integer 
-	int portNumber = atoi(argv[1]);
+	//int portNumber = atoi(argv[1]);
 
-	struct addr_info* messageInfo = createUdpLiteSocket(portNumber);
-	struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1);
+	Server *server = new Server(argc, argv);
+
+	struct addr_info* messageInfo = createUdpLiteSocket(server->portNumber);
+	struct addr_info* heartbeatInfo = createUdpLiteSocket(server->portNumber + 1);
 
     // binding server addr structure to udp sockfd 
     int status = bind(messageInfo->fd, (struct sockaddr*)messageInfo->addr_info, sizeof(struct sockaddr_in));
@@ -105,21 +109,11 @@ int main(int argc, char* argv[])
 
 	set_checksum_on_socket(messageInfo->fd, sizeof(struct checksum), UDPLITE_RECV_CSCOV);
 
-    std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
-	std::thread thread_heartbeat(handleHeartbeat, ref(*heartbeatInfo));
+    std::thread thread_getMessages(server->handleGetMessage, ref(*messageInfo));
+	std::thread thread_heartbeat(server->handleHeartbeat, ref(*heartbeatInfo));
 
 	thread_getMessages.join();
 	thread_heartbeat.join();
 	
 	return 0;
-}
-
-int add(int i, int j)
-{
-    return i + j;
-}
-
-int multiply(int a, int b)
-{
-	return a*b;
 }
