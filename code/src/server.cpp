@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+/*#include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -13,46 +13,12 @@
 #include <vector>
 #include <list>
 
-#include "header/socket_helper.h"
+#include "header/socket_helper.h"*/
+
+#include "header/server.h"
 
 using namespace std;
-struct client_info{
-	list<size_t> missing_messages_id;
-	size_t expected_message_id;
-};
-
-unordered_map<int, struct client_info> clients;
-
-void process_message(struct metadata& metadata_struct, string& content)
-{
-	int client_id = metadata_struct.client_id;
-	size_t message_id = metadata_struct.message_id;
-
-	switch (metadata_struct.message_type_id)
-	{
-	case message_type_data:
-		if (clients[client_id].expected_message_id != message_id && message_id != 1){
-			cout << "Registered a missing message. Message ID: " << clients[client_id].expected_message_id << endl;
-			//we missed a message; add it to the missing list
-			clients[client_id].missing_messages_id.push_back(clients[client_id].expected_message_id);
-		}
-
-		//do sth
-		clients[client_id].expected_message_id = message_id + 1;
-		break;
-
-	case message_type_data_request_response:
-		cout << "Received a missing message. Message ID: " << metadata_struct.message_id << endl;
-		//We have received a missing message so we no longer need it
-		clients[metadata_struct.client_id].missing_messages_id.remove(metadata_struct.message_id);
-		break;
-
-	default:
-		throw "Unknown/Unhandled message type!";
-		break;
-	}
-}
-
+/*
 void handleGetMessage(struct addr_info& addr){
     int messageFD = addr.fd;
     struct sockaddr_in* peerAddr = addr.addr_info;
@@ -115,7 +81,7 @@ void handleHeartbeat(struct addr_info& addr){
         cout<<"\tHeartbeat response sent"<<endl;
     }
 }
-
+*/
 
 int main(int argc, char* argv[])
 {
@@ -127,10 +93,12 @@ int main(int argc, char* argv[])
 	cout << "IPROTO_UDPLITE: " << IPPROTO_UDPLITE << endl;
 
 	// Convert port number top integer 
-	int portNumber = atoi(argv[1]);
+	//int portNumber = atoi(argv[1]);
 
-	struct addr_info* messageInfo = createUdpLiteSocket(portNumber);
-	struct addr_info* heartbeatInfo = createUdpLiteSocket(portNumber + 1);
+	Server *server = new Server(argc, argv);
+
+	struct addr_info* messageInfo = createUdpLiteSocket(server->portNumber);
+	struct addr_info* heartbeatInfo = createUdpLiteSocket(server->portNumber + 1);
 
     // binding server addr structure to udp sockfd 
     int status = bind(messageInfo->fd, (struct sockaddr*)messageInfo->addr_info, sizeof(struct sockaddr_in));
@@ -147,21 +115,11 @@ int main(int argc, char* argv[])
 
 	set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_RECV_CSCOV);
 
-    std::thread thread_getMessages(handleGetMessage, ref(*messageInfo));
-	std::thread thread_heartbeat(handleHeartbeat, ref(*heartbeatInfo));
+    std::thread thread_getMessages(server->handleGetMessage, ref(*messageInfo));
+	std::thread thread_heartbeat(server->handleHeartbeat, ref(*heartbeatInfo));
 
 	thread_getMessages.join();
 	thread_heartbeat.join();
 	
 	return 0;
-}
-
-int add(int i, int j)
-{
-    return i + j;
-}
-
-int multiply(int a, int b)
-{
-	return a*b;
 }
