@@ -25,7 +25,7 @@ void Server::handleGetMessage(struct addr_info& addr)
     struct sockaddr_in* peerAddr = addr.addr_info;
 	ssize_t n;
 	socklen_t addrlen;
-	struct checksum message_metadata;
+	struct metadata message_metadata;
 	string message_content;
 	char buffer[MAX_BUF];
 
@@ -40,9 +40,9 @@ void Server::handleGetMessage(struct addr_info& addr)
 		get_message_metadata(message_metadata, buffer);
 		string message_content = get_message_content(buffer);
         cout<<	"Message received: " <<endl\
-			<<	"\tClientID: "		<< message_metadata.clientID <<endl\
-			<<	"\tMessageID: "		<< message_metadata.messageID <<endl\
-			<<	"\tStatus: "		<< message_metadata.statusID <<endl\
+			<<	"\tClientID: "		<< message_metadata.client_id <<endl\
+			<<	"\tMessageID: "		<< message_metadata.message_id <<endl\
+			<<	"\tStatus: "		<< message_metadata.status_id <<endl\
 			<< 	"\tContent: "		<< message_content << endl;
 		
 		sendto(messageFD, (const char*)message_content.c_str(), message_content.length(),

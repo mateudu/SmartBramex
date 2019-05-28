@@ -34,14 +34,14 @@ void Client_udp::handleSendMessage(struct addr_info& addr)
     addrlen = sizeof(struct sockaddr_in);
     char buffer[MAX_BUF];
 
-    struct checksum message_metadata;
+    struct metadata message_metadata;
     
     for(;;){
         memset(buffer, 0, MAX_BUF);
         message_id += 1;
-        message_metadata.clientID = client_id;
-        message_metadata.messageID = message_id;
-        message_metadata.statusID = active;
+        message_metadata.client_id = client_id;
+        message_metadata.message_id = message_id;
+        message_metadata.status_id = active;
 
         generate_message(buffer, message_metadata, "abcdef");
         sendto(messageFD, (const char*)buffer, sizeof(buffer), 
