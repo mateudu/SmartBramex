@@ -1,7 +1,7 @@
 #pragma once
 #include <arpa/inet.h>
 
-#include "core.h"
+#include "core.hpp"
 
 class Client_udp : public Core
 {
@@ -9,7 +9,7 @@ public:
   int portNumber;
   int client_id;
   size_t message_id;
-  Status client_status;
+  status client_status;
 
 public:
   Client_udp(int argc, char* argv[]);
@@ -23,7 +23,7 @@ Client_udp::Client_udp(int argc, char* argv[])
     this->portNumber = atoi(argv[2]);
     this->client_id = stoi(argv[3]);
     this->message_id = 0;
-    this->client_status = active;
+    this->client_status = status_active;
 }
 
 void Client_udp::handleSendMessage(struct addr_info& addr)
@@ -41,7 +41,7 @@ void Client_udp::handleSendMessage(struct addr_info& addr)
         message_id += 1;
         message_metadata.client_id = client_id;
         message_metadata.message_id = message_id;
-        message_metadata.status_id = active;
+        message_metadata.status_id = status_active;
 
         generate_message(buffer, message_metadata, "abcdef");
         sendto(messageFD, (const char*)buffer, sizeof(buffer), 

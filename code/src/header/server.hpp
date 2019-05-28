@@ -2,7 +2,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include "core.h"
+#include "core.hpp"
 
 class Server : Core
 {
