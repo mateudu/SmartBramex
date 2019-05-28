@@ -1,9 +1,9 @@
 #define BOOST_TEST_MODULE tests
 #include <boost/test/included/unit_test.hpp>
 #include <iostream>
-#include "header/socket_helper.h"
-#include "header/server.h"
-#include "header/client_udp.h"
+#include "header/socket_helper.hpp"
+#include "header/server.hpp"
+#include "header/client_udp.hpp"
 
 int dodaj(int i, int j)
 {
