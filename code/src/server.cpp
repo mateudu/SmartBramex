@@ -115,8 +115,8 @@ int main(int argc, char* argv[])
 
 	set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_RECV_CSCOV);
 
-    std::thread thread_getMessages(server->handleGetMessage, ref(*messageInfo));
-	std::thread thread_heartbeat(server->handleHeartbeat, ref(*heartbeatInfo));
+    std::thread thread_getMessages(Server::handleGetMessage, server, ref(*messageInfo));
+	std::thread thread_heartbeat(Server::handleHeartbeat, server, ref(*heartbeatInfo));
 
 	thread_getMessages.join();
 	thread_heartbeat.join();
