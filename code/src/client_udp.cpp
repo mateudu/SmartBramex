@@ -120,9 +120,9 @@ int main(int argc, char* argv[])
     set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_SEND_CSCOV);
     set_timeout_on_socket(heartbeatInfo->fd, 33);
 
-    std::thread thread_sendMessages(client->handleSendMessage, ref(*messageInfo));
-    std::thread thread_getMessages(client->handleGetMessage, ref(*messageInfo));
-    std::thread thread_heartbeat(client->handleHeartbeat, ref(*heartbeatInfo));
+    std::thread thread_sendMessages(&Client_udp::handleSendMessage, client, ref(*messageInfo));
+    std::thread thread_getMessages(&Client_udp::handleGetMessage, client, ref(*messageInfo));
+    std::thread thread_heartbeat(&Client_udp::handleHeartbeat, client, ref(*heartbeatInfo));
     
     thread_sendMessages.join();
     thread_getMessages.join();
