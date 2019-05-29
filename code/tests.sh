@@ -21,6 +21,7 @@ echo "${green}Run test scenarios...${reset}"
 {
     sh tests/start_server.sh
     sh tests/send_message_to_server.sh
+    sh tests/start_client_without_server.sh
 } || {
     echo "${red}Test scenarios failed...${reset}"
     exit 1;   
