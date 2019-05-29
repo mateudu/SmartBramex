@@ -24,6 +24,23 @@ Client_udp::Client_udp(int argc, char* argv[])
     this->client_id = stoi(argv[3]);
     this->message_id = 0;
     this->client_status = status_active;
+
+	struct addr_info* messageInfo = createUdpLiteSocket(this->portNumber, argv[1]);
+    struct addr_info* heartbeatInfo = createUdpLiteSocket(this->portNumber + 1, argv[1]);
+
+    set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_SEND_CSCOV);
+    set_timeout_on_socket(heartbeatInfo->fd, 33);
+
+    std::thread thread_sendMessages(&Client_udp::handleSendMessage, this, ref(*messageInfo));
+    std::thread thread_getMessages(&Client_udp::handleGetMessage, this, ref(*messageInfo));
+    std::thread thread_heartbeat(&Client_udp::handleHeartbeat, this, ref(*heartbeatInfo));
+    
+    thread_sendMessages.join();
+    thread_getMessages.join();
+    thread_heartbeat.join();
+    
+    close(messageInfo->fd); 
+    close(heartbeatInfo->fd);
 }
 
 void Client_udp::handleSendMessage(struct addr_info& addr)

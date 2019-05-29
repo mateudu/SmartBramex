@@ -17,6 +17,29 @@ public:
 Server::Server(int argc, char* argv[])
 {
     this->portNumber = atoi(argv[1]);
+	struct addr_info* messageInfo = createUdpLiteSocket(this->portNumber);
+	struct addr_info* heartbeatInfo = createUdpLiteSocket(this->portNumber + 1);
+
+    // binding server addr structure to udp sockfd 
+    int status = bind(messageInfo->fd, (struct sockaddr*)messageInfo->addr_info, sizeof(struct sockaddr_in));
+	if (status == -1) {
+		cout<<"UDP binding error: "<< errno <<endl;
+		throw "UDP binding error";
+	}
+
+    status = bind(heartbeatInfo->fd, (struct sockaddr*)heartbeatInfo->addr_info, sizeof(struct sockaddr_in));
+	if (status == -1) {
+		cout<<"UDP binding error: "<< errno <<endl;
+		throw "UDP binding error";
+	}
+
+	set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_RECV_CSCOV);
+
+    std::thread thread_getMessages(&Server::handleGetMessage, this, ref(*messageInfo));
+	std::thread thread_heartbeat(&Server::handleHeartbeat, this, ref(*heartbeatInfo));
+
+	thread_getMessages.join();
+	thread_heartbeat.join();
 }
 
 void Server::handleGetMessage(struct addr_info& addr)
