@@ -1,6 +1,6 @@
 -- Projekt: SmartBramex
 -- Funkcja: Modul Wireshark
--- Ostatnia zmiana: 12/05/2019
+-- Ostatnia zmiana: 29/05/2019
 -- Autor: Sebastian Kamoda
 
 bramex_proto = Proto("bramex", "Bramex Protocol dissector")
@@ -21,13 +21,26 @@ function bramex_proto.dissector(buffer, pinfo, tree)
 	local pktlen = buffer:reported_length_remaining()
 
 		local subtree = tree:add(bramex_proto, buffer:range(0, pktlen), "Bramex protocol data")
-	subtree:append_text(", Packet details below")
+	subtree:append_text(", packet details below")
 
-	subtree:add_le(client_id, buffer:range(0, 8))
-	subtree:add_le(message_id, buffer:range(8, 8))
-	subtree:add_le(status, buffer:range(16, 4))
-	subtree:add_le(message_type, buffer:range(20, 4))
-	subtree:add(content, buffer:range(24, 100))
+	-- approximate value
+	if length > 100
+	then
+		-- add_le for little endian for proper integer represantation
+		subtree:add_le(client_id, buffer:range(0, 8))
+		subtree:add_le(message_id, buffer:range(8, 8))
+		subtree:add_le(status, buffer:range(16, 4))
+		subtree:add_le(message_type, buffer:range(20, 4))
+		local data = buffer(24):tvb()
+		subtree:add(content, data())
+	end
+
+	if length < 100
+	then
+		-- tvb ("Testy Virtual Buffer") represents the packet's buffer
+		local data = buffer(0):tvb()
+		subtree:add(content, data())
+	end
 	--add other payloads details
 end
 
@@ -36,3 +49,4 @@ end
 
 local udpLite_dissector_table = DissectorTable.get("udp.port")
 udpLite_dissector_table:add(6969, bramex_proto)
+udpLite_dissector_table:add(6970, bramex_proto)
