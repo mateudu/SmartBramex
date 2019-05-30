@@ -11,46 +11,48 @@ public:
     int portNumber;
   
     Server(int argc, char* argv[]);
-    void handleGetMessage(struct addr_info& addr);
-    void handleHeartbeat(struct addr_info& addr);
+    void handleGetMessage();
+    void handleHeartbeat();
 	void process_message(struct metadata& metadata_struct, string& content);
 
 private:
 	unordered_map<int, struct client_info> clients;
+	struct addr_info* message_addr_info;
+	struct addr_info* heartbeat_addr_info;
 };
 
 Server::Server(int argc, char* argv[])
 {
     this->portNumber = atoi(argv[1]);
-	struct addr_info* messageInfo = createUdpLiteSocket(this->portNumber);
-	struct addr_info* heartbeatInfo = createUdpLiteSocket(this->portNumber + 1);
+	message_addr_info = createUdpLiteSocket(this->portNumber);
+	heartbeat_addr_info = createUdpLiteSocket(this->portNumber + 1);
 
     // binding server addr structure to udp sockfd 
-    int status = bind(messageInfo->fd, (struct sockaddr*)messageInfo->addr_info, sizeof(struct sockaddr_in));
+    int status = bind(message_addr_info->fd, (struct sockaddr*)message_addr_info->addr_info, sizeof(struct sockaddr_in));
 	if (status == -1) {
 		cout<<"UDP binding error: "<< errno <<endl;
 		throw "UDP binding error";
 	}
 
-    status = bind(heartbeatInfo->fd, (struct sockaddr*)heartbeatInfo->addr_info, sizeof(struct sockaddr_in));
+    status = bind(heartbeat_addr_info->fd, (struct sockaddr*)heartbeat_addr_info->addr_info, sizeof(struct sockaddr_in));
 	if (status == -1) {
 		cout<<"UDP binding error: "<< errno <<endl;
 		throw "UDP binding error";
 	}
 
-	set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_RECV_CSCOV);
+	set_checksum_on_socket(message_addr_info->fd, sizeof(struct metadata), UDPLITE_RECV_CSCOV);
 
-    std::thread thread_getMessages(&Server::handleGetMessage, this, ref(*messageInfo));
-	std::thread thread_heartbeat(&Server::handleHeartbeat, this, ref(*heartbeatInfo));
+    std::thread thread_getMessages(&Server::handleGetMessage, this);
+	std::thread thread_heartbeat(&Server::handleHeartbeat, this);
 
 	thread_getMessages.join();
 	thread_heartbeat.join();
 }
 
-void Server::handleGetMessage(struct addr_info& addr)
+void Server::handleGetMessage()
 {
-	int messageFD = addr.fd;
-    struct sockaddr_in* peerAddr = addr.addr_info;
+	int messageFD = message_addr_info->fd;
+    struct sockaddr_in* peerAddr = message_addr_info->addr_info;
 	ssize_t n;
 	socklen_t addrlen;
 	struct metadata message_metadata;
@@ -89,10 +91,10 @@ void Server::handleGetMessage(struct addr_info& addr)
     } 
 }
 
-void Server::handleHeartbeat(struct addr_info& addr)
+void Server::handleHeartbeat()
 {
-	int heartbeatFD = addr.fd;
-    struct sockaddr_in* servAddr = addr.addr_info;
+	int heartbeatFD = heartbeat_addr_info->fd;
+    struct sockaddr_in* servAddr = heartbeat_addr_info->addr_info;
     size_t n;
     socklen_t addrlen;
     char buffer[MAX_BUF];
