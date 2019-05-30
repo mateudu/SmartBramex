@@ -6,3 +6,8 @@
 .vscode/ipch
 /.vs/Project_TIN_lua/v15
 /.vs
+.vscode/ipch
+code/src/.vscode/ipch/1d29f0b713ca16cd/mmap_address.bin
+code/src/.vscode/ipch/1d29f0b713ca16cd/tests.ipch
+code/src/.vscode/ipch/afe2063a24f10150/core.ipch
+code/src/.vscode/ipch/afe2063a24f10150/mmap_address.bin
