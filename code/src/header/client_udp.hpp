@@ -52,13 +52,14 @@ void Client_udp::handleSendMessage(struct addr_info& addr)
     char buffer[MAX_BUF];
 
     struct metadata message_metadata;
-    
+
     for(;;){
         memset(buffer, 0, MAX_BUF);
         message_id += 1;
         message_metadata.client_id = client_id;
         message_metadata.message_id = message_id;
-        message_metadata.status_id = status_active;
+        message_metadata.status_id = client_status;
+        message_metadata.message_type_id = message_type_data;
 
         generate_message(buffer, message_metadata, "abcdef");
         sendto(messageFD, (const char*)buffer, sizeof(buffer), 
@@ -73,25 +74,25 @@ void Client_udp::handleSendMessage(struct addr_info& addr)
 
 void Client_udp::handleGetMessage(struct addr_info& addr)
 {
-  int messageFD = addr.fd;
-  struct sockaddr_in* servAddr = addr.addr_info;
-  size_t n;
-  socklen_t addrlen;
-  char buffer[MAX_BUF];
+    int messageFD = addr.fd;
+    struct sockaddr_in* servAddr = addr.addr_info;
+    size_t n;
+    socklen_t addrlen;
+    char buffer[MAX_BUF];
 
-  addrlen = sizeof(struct sockaddr_in);
+    addrlen = sizeof(struct sockaddr_in);
 
     for(;;){
         n = recvfrom(messageFD, (char*)buffer, MAX_BUF, 
                   0, (struct sockaddr*)servAddr, 
                   &addrlen);
-        if (n > -1)
+        if (n == -1)
         {
-            cout<<"Message from server: "<<buffer<<endl; 
+            cout<<"Receiving message from server FAILED! errno: "<<errno<<" n: "<<n<<endl;
         }
         else
         {
-            cout<<"Receiving message from server FAILED! errno: "<<errno<<endl;
+            cout<<"Message from server: "<<buffer<<endl;
         }
     }
 }
@@ -107,7 +108,7 @@ void Client_udp::handleHeartbeat(struct addr_info& addr)
     char buffer[MAX_BUF];
 
     addrlen = sizeof(struct sockaddr_in);    
-    
+
     for(;;){
         // send hello message to server 
         sendto(heartbeatFD, (const char*)msg.c_str(), msg.length(), 
@@ -124,7 +125,7 @@ void Client_udp::handleHeartbeat(struct addr_info& addr)
             cout<<"CONNECTION LOST!!"<<endl;
             throw "Connection lost";
         }
-        
+
         cout<<"\tHeartbeat response received: "<<buffer<<endl; 
 
         sleep(8);

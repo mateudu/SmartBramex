@@ -3,6 +3,7 @@
         "iostream": "cpp",
         "ostream": "cpp",
         "new": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "list": "cpp"
     }
 }

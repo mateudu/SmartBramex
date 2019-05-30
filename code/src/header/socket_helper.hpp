@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <thread>
 #include <sys/socket.h>
+#include <list>
 
 #define UDPLITE_SEND_CSCOV  10
 #define UDPLITE_RECV_CSCOV  11
@@ -32,6 +33,11 @@ struct metadata{
     size_t message_id;
     status status_id;
     message_type message_type_id;
+};
+
+struct client_info{
+	list<size_t> missing_messages_id;
+	size_t expected_message_id;
 };
 
 struct addr_info* createUdpLiteSocket(int port, char *address = nullptr);

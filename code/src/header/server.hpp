@@ -1,6 +1,7 @@
 #pragma once
 #include <fcntl.h>
 #include <errno.h>
+#include <unordered_map>
 
 #include "core.hpp"
 
@@ -12,6 +13,10 @@ public:
     Server(int argc, char* argv[]);
     void handleGetMessage(struct addr_info& addr);
     void handleHeartbeat(struct addr_info& addr);
+	void process_message(struct metadata& metadata_struct, string& content);
+
+private:
+	unordered_map<int, struct client_info> clients;
 };
 
 Server::Server(int argc, char* argv[])
@@ -44,7 +49,7 @@ Server::Server(int argc, char* argv[])
 
 void Server::handleGetMessage(struct addr_info& addr)
 {
-    int messageFD = addr.fd;
+	int messageFD = addr.fd;
     struct sockaddr_in* peerAddr = addr.addr_info;
 	ssize_t n;
 	socklen_t addrlen;
@@ -60,27 +65,28 @@ void Server::handleGetMessage(struct addr_info& addr)
 		n = recvfrom(messageFD, buffer, sizeof(buffer), 0, 
 						(struct sockaddr*)peerAddr, &addrlen); 
 
-		if (n > -1)
-		{
+		if (n == -1) {
+			cout<<"Receive message FAILED! errno: "<<errno<<endl;
+		}
+		else {
 			get_message_metadata(message_metadata, buffer);
 			string message_content = get_message_content(buffer);
 			cout<<	"Message received: " <<endl\
 				<<	"\tClientID: "		<< message_metadata.client_id <<endl\
 				<<	"\tMessageID: "		<< message_metadata.message_id <<endl\
 				<<	"\tStatus: "		<< message_metadata.status_id <<endl\
-				<< 	"\tContent: "		<< message_content << endl;
-			
+				<<	"\tType: "			<< message_metadata.message_type_id <<endl\
+				<< 	"\tContent: "		<< message_content <<endl;
+
+			process_message(message_metadata, message_content);
+
 			sendto(messageFD, (const char*)message_content.c_str(), message_content.length(),
 					0, (struct sockaddr*)peerAddr, 
 					addrlen);
 
 			cout<<"\tResponse sent"<<endl;
 		}
-		else
-		{
-			cout<<"Receiving message FAILED! errno: "<<errno<<endl;
-		}
-    }
+    } 
 }
 
 void Server::handleHeartbeat(struct addr_info& addr)
@@ -95,15 +101,16 @@ void Server::handleHeartbeat(struct addr_info& addr)
 
     for(;;){
 		memset(buffer, 0, strlen(buffer));
-		
+
         n = recvfrom(heartbeatFD, (char*)buffer, MAX_BUF, 
                         0, (struct sockaddr*)servAddr, 
                         &addrlen);
-        
-		if (n > -1)
-		{
-			cout<<"Heartbeat received: "<<buffer<<endl;
 
+		if (n == -1) {
+			cout<<"Heartbeat receive FAILED! errno: "<<errno<<endl;
+		}
+		else {
+			cout<<"Heartbeat received: "<<buffer<<endl; 
 
 			sendto(heartbeatFD, (const char*)buffer, strlen(buffer), 
 				0, (const struct sockaddr*)servAddr, 
@@ -111,9 +118,38 @@ void Server::handleHeartbeat(struct addr_info& addr)
 
 			cout<<"\tHeartbeat response sent"<<endl;
 		}
-		else
-		{
-			cout<<"Heartbeat receive FAILED! errno: "<<errno<<endl;
-		}
+		
+		
+        
     }
+}
+
+void Server::process_message(struct metadata& metadata_struct, string& content)
+{
+	int client_id = metadata_struct.client_id;
+	size_t message_id = metadata_struct.message_id;
+
+	switch (metadata_struct.message_type_id)
+	{
+	case message_type_data:
+		if (clients[client_id].expected_message_id != message_id && message_id != 1){
+			cout << "Registered a missing message. Message ID: " << clients[client_id].expected_message_id << endl;
+			//we missed a message; add it to the missing list
+			clients[client_id].missing_messages_id.push_back(clients[client_id].expected_message_id);
+		}
+
+		//do sth
+		clients[client_id].expected_message_id = message_id + 1;
+		break;
+
+	case message_type_data_request_response:
+		cout << "Received a missing message. Message ID: " << metadata_struct.message_id << endl;
+		//We have received a missing message so we no longer need it
+		clients[metadata_struct.client_id].missing_messages_id.remove(metadata_struct.message_id);
+		break;
+
+	default:
+		throw "Unknown/Unhandled message type!";
+		break;
+	}
 }
