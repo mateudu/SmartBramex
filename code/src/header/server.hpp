@@ -60,19 +60,26 @@ void Server::handleGetMessage(struct addr_info& addr)
 		n = recvfrom(messageFD, buffer, sizeof(buffer), 0, 
 						(struct sockaddr*)peerAddr, &addrlen); 
 
-		get_message_metadata(message_metadata, buffer);
-		string message_content = get_message_content(buffer);
-        cout<<	"Message received: " <<endl\
-			<<	"\tClientID: "		<< message_metadata.client_id <<endl\
-			<<	"\tMessageID: "		<< message_metadata.message_id <<endl\
-			<<	"\tStatus: "		<< message_metadata.status_id <<endl\
-			<< 	"\tContent: "		<< message_content << endl;
-		
-		sendto(messageFD, (const char*)message_content.c_str(), message_content.length(),
-				0, (struct sockaddr*)peerAddr, 
-				addrlen);
+		if (n > -1)
+		{
+			get_message_metadata(message_metadata, buffer);
+			string message_content = get_message_content(buffer);
+			cout<<	"Message received: " <<endl\
+				<<	"\tClientID: "		<< message_metadata.client_id <<endl\
+				<<	"\tMessageID: "		<< message_metadata.message_id <<endl\
+				<<	"\tStatus: "		<< message_metadata.status_id <<endl\
+				<< 	"\tContent: "		<< message_content << endl;
+			
+			sendto(messageFD, (const char*)message_content.c_str(), message_content.length(),
+					0, (struct sockaddr*)peerAddr, 
+					addrlen);
 
-		cout<<"\tResponse sent"<<endl;
+			cout<<"\tResponse sent"<<endl;
+		}
+		else
+		{
+			cout<<"Receiving message FAILED! errno: "<<errno<<endl;
+		}
     }
 }
 
@@ -93,13 +100,20 @@ void Server::handleHeartbeat(struct addr_info& addr)
                         0, (struct sockaddr*)servAddr, 
                         &addrlen);
         
-        cout<<"Heartbeat received: "<<buffer<<endl; 
+		if (n > -1)
+		{
+			cout<<"Heartbeat received: "<<buffer<<endl;
 
 
-        sendto(heartbeatFD, (const char*)buffer, strlen(buffer), 
-            0, (const struct sockaddr*)servAddr, 
-            addrlen); 
+			sendto(heartbeatFD, (const char*)buffer, strlen(buffer), 
+				0, (const struct sockaddr*)servAddr, 
+				addrlen); 
 
-        cout<<"\tHeartbeat response sent"<<endl;
+			cout<<"\tHeartbeat response sent"<<endl;
+		}
+		else
+		{
+			cout<<"Heartbeat receive FAILED! errno: "<<errno<<endl;
+		}
     }
 }

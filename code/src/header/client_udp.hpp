@@ -81,12 +81,18 @@ void Client_udp::handleGetMessage(struct addr_info& addr)
 
   addrlen = sizeof(struct sockaddr_in);
 
-  for(;;){
-      n = recvfrom(messageFD, (char*)buffer, MAX_BUF, 
+    for(;;){
+        n = recvfrom(messageFD, (char*)buffer, MAX_BUF, 
                   0, (struct sockaddr*)servAddr, 
                   &addrlen);
-
-        cout<<"Message from server: "<<buffer<<endl; 
+        if (n > -1)
+        {
+            cout<<"Message from server: "<<buffer<<endl; 
+        }
+        else
+        {
+            cout<<"Receiving message from server FAILED! errno: "<<errno<<endl;
+        }
     }
 }
 

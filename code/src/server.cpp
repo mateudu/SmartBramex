@@ -28,9 +28,6 @@ int main(int argc, char* argv[])
 	}
 	cout << "IPROTO_UDPLITE: " << IPPROTO_UDPLITE << endl;
 
-	// Convert port number top integer 
-	//int portNumber = atoi(argv[1]);
-
 	Server *server = new Server(argc, argv);
 		
 	return 0;
