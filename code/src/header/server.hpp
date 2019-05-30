@@ -1,29 +1,28 @@
 #pragma once
 #include <fcntl.h>
 #include <errno.h>
-#include <unordered_map>
+#include <map>
 
 #include "core.hpp"
 
 class Server : Core
 {
 public:
-    int portNumber;
-  
     Server(int argc, char* argv[]);
-    void handleGetMessage();
-    void handleHeartbeat();
-	void process_message(struct metadata& metadata_struct, string& content);
+
+	void process_message(struct message&) override;
+    void handleGetMessage() override;
+    void handleHeartbeat() override;
 
 private:
-	unordered_map<int, struct client_info> clients;
-	struct addr_info* message_addr_info;
-	struct addr_info* heartbeat_addr_info;
+	map<int, struct client_info> clients;
+	std::mutex mutex;
 };
 
 Server::Server(int argc, char* argv[])
 {
     this->portNumber = atoi(argv[1]);
+
 	message_addr_info = createUdpLiteSocket(this->portNumber);
 	heartbeat_addr_info = createUdpLiteSocket(this->portNumber + 1);
 
@@ -51,43 +50,45 @@ Server::Server(int argc, char* argv[])
 
 void Server::handleGetMessage()
 {
-	int messageFD = message_addr_info->fd;
     struct sockaddr_in* peerAddr = message_addr_info->addr_info;
 	ssize_t n;
-	socklen_t addrlen;
-	struct metadata message_metadata;
-	string message_content;
+	socklen_t addrlen = sizeof(struct sockaddr_in);
+	struct message msg;
 	char buffer[MAX_BUF];
-
-	addrlen = sizeof(struct sockaddr_in);
 
     for (;;) 
 	{
 		memset(buffer, 0, strlen(buffer));
-		n = recvfrom(messageFD, buffer, sizeof(buffer), 0, 
+		n = recvfrom(message_addr_info->fd, buffer, sizeof(buffer), 0, 
 						(struct sockaddr*)peerAddr, &addrlen); 
 
 		if (n == -1) {
 			cout<<"Receive message FAILED! errno: "<<errno<<endl;
 		}
 		else {
-			get_message_metadata(message_metadata, buffer);
-			string message_content = get_message_content(buffer);
+			get_message_metadata(msg.metadata, buffer);
+			msg.content = get_message_content(buffer);
 			cout<<	"Message received: " <<endl\
-				<<	"\tClientID: "		<< message_metadata.client_id <<endl\
-				<<	"\tMessageID: "		<< message_metadata.message_id <<endl\
-				<<	"\tStatus: "		<< message_metadata.status_id <<endl\
-				<<	"\tType: "			<< message_metadata.message_type_id <<endl\
-				<< 	"\tContent: "		<< message_content <<endl;
+				<<	"\tClientID: "		<< msg.metadata.client_id <<endl\
+				<<	"\tMessageID: "		<< msg.metadata.message_id <<endl\
+				<<	"\tStatus: "		<< msg.metadata.status_id <<endl\
+				<<	"\tType: "			<< msg.metadata.message_type_id <<endl\
+				<< 	"\tContent: "		<< msg.content <<endl;
 
-			process_message(message_metadata, message_content);
+			process_message(msg);
 
-			sendto(messageFD, (const char*)message_content.c_str(), message_content.length(),
-					0, (struct sockaddr*)peerAddr, 
-					addrlen);
-
-			cout<<"\tResponse sent"<<endl;
+			std::unique_lock<std::mutex> lk(mutex);
+			if (clients[msg.metadata.client_id].missing_messages_id.size() > 0)
+			{
+				msg.metadata.message_id = clients[msg.metadata.client_id].missing_messages_id.front();
+				msg.metadata.message_type_id = message_type_data_request;
+				msg.content.clear(); 
+				send_message(msg, message_addr_info->fd, peerAddr);
+				cout<<"Message request has been sent to client: "<<msg.metadata.client_id <<"Message ID: "<<msg.metadata.message_id<<endl;
+			}
 		}
+
+		
     } 
 }
 
@@ -126,14 +127,15 @@ void Server::handleHeartbeat()
     }
 }
 
-void Server::process_message(struct metadata& metadata_struct, string& content)
+void Server::process_message(struct message& msg)
 {
-	int client_id = metadata_struct.client_id;
-	size_t message_id = metadata_struct.message_id;
+	int client_id = msg.metadata.client_id;
+	size_t message_id = msg.metadata.message_id;
 
-	switch (metadata_struct.message_type_id)
+	switch (msg.metadata.message_type_id)
 	{
 	case message_type_data:
+		mutex.lock();
 		if (clients[client_id].expected_message_id != message_id && message_id != 1){
 			cout << "Registered a missing message. Message ID: " << clients[client_id].expected_message_id << endl;
 			//we missed a message; add it to the missing list
@@ -142,14 +144,17 @@ void Server::process_message(struct metadata& metadata_struct, string& content)
 
 		//do sth
 		clients[client_id].expected_message_id = message_id + 1;
+		mutex.unlock();
 		break;
-
 	case message_type_data_request_response:
-		cout << "Received a missing message. Message ID: " << metadata_struct.message_id << endl;
+		cout << "Received a missing message. Message ID: " << msg.metadata.message_id << endl;
 		//We have received a missing message so we no longer need it
-		clients[metadata_struct.client_id].missing_messages_id.remove(metadata_struct.message_id);
-		break;
+		
+		mutex.lock();
+		clients[msg.metadata.client_id].missing_messages_id.remove(msg.metadata.message_id);
+		mutex.unlock();
 
+		break;
 	default:
 		throw "Unknown/Unhandled message type!";
 		break;

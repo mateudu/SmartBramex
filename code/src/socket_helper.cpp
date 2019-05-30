@@ -36,18 +36,18 @@ void set_timeout_on_socket(int sock_fd, time_t n_o_seconds){
     setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_struct, sizeof(tv_struct));
 }
 
-void generate_message(char buffer[], struct metadata& metadata, string content){
+void generate_message(char buffer[], struct message& msg){
     //make sure the messaage is not too big
-    if ((sizeof(struct metadata) + content.length()) >= MAX_BUF)
+    if ((sizeof(struct metadata) + msg.content.length()) >= MAX_BUF)
         throw "MESSAGE SIZE IS BIGGER THAN MAX_BUF. INCRASE MAX_BUF";
     
     //copy metadata, which will be protected
     size_t offset = 0;
-    memcpy(buffer + offset, &metadata, sizeof(struct metadata));
+    memcpy(buffer + offset, &msg.metadata, sizeof(struct metadata));
     offset += sizeof(struct metadata);
 
     //copy the rest of the message
-    memcpy(buffer + offset, content.c_str(), content.length());
+    memcpy(buffer + offset, msg.content.c_str(), msg.content.length());
 }
 
 void get_message_metadata(struct metadata& metadata_struct, char* buffer){
@@ -60,5 +60,18 @@ string get_message_content(char* buffer){
     char temp_buff[MAX_BUF];
     memcpy(temp_buff, buffer + sizeof(struct metadata), MAX_BUF - sizeof(struct metadata));
     string str(temp_buff);
-    return str;
+    return str;    
+}
+
+void send_message(message& msg, int fd, sockaddr_in* servAddr)
+{
+    char buffer[MAX_BUF];
+    memset(buffer, 0, MAX_BUF);
+
+    generate_message(buffer, msg);
+
+    sendto(fd, (const char*)buffer, sizeof(buffer), 
+        0, (const struct sockaddr*)servAddr, 
+        sizeof(struct sockaddr_in));
+
 }

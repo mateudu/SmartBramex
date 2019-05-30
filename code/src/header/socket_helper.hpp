@@ -40,15 +40,22 @@ struct client_info{
 	size_t expected_message_id;
 };
 
+struct message{
+    struct metadata metadata;
+    string content;
+};
+
 struct addr_info* createUdpLiteSocket(int port, char *address = nullptr);
 
 void set_checksum_on_socket(int sock_fd, size_t n_o_bytes, short int type);
 
 void set_timeout_on_socket(int sock_fd, time_t n_o_seconds);
 
-void generate_message(char buffer[], struct metadata& metadata, string content);
+void generate_message(char buffer[], struct message& msg);
 
 void get_message_metadata(struct metadata& metadata_struct, char* buffer);
 
 string get_message_content(char* buffer);
+
+void send_message(message& msg, int fd, sockaddr_in* servAddr);
 
