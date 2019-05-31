@@ -156,9 +156,7 @@ void Client_udp::handleHeartbeat()
 
 void Client_udp::process_message(struct message& msg)
 {
-    struct message msg;
-
-	switch (msg.metadata.message_type_id) {
+    switch (msg.metadata.message_type_id) {
         case message_type_data_request:
             //Find message with that ID from vector of messages sent
             mutex.lock();
@@ -168,8 +166,7 @@ void Client_udp::process_message(struct message& msg)
                 {
                     msg = it;
                     break;
-                }
-                
+                }                
             }
             mutex.unlock();
             

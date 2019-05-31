@@ -16,13 +16,12 @@ using namespace std;
 
 class Core
 {
-public:
-  virtual void handleGetMessage() {}
-  virtual void handleHeartbeat() {}
-  virtual void process_message(struct message&) {}
-
-
+public:  
+	virtual void handleGetMessage() {}
+	virtual void handleHeartbeat() {}
+	virtual void process_message(struct message&) {}
+  
 	struct addr_info* message_addr_info;
 	struct addr_info* heartbeat_addr_info;
-  int portNumber;
+	int portNumber;
 };

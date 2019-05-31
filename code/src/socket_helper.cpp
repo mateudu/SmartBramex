@@ -73,5 +73,4 @@ void send_message(message& msg, int fd, sockaddr_in* servAddr)
     sendto(fd, (const char*)buffer, sizeof(buffer), 
         0, (const struct sockaddr*)servAddr, 
         sizeof(struct sockaddr_in));
-
 }

@@ -86,9 +86,7 @@ void Server::handleGetMessage()
 				send_message(msg, message_addr_info->fd, peerAddr);
 				cout<<"Message request has been sent to client: "<<msg.metadata.client_id <<"Message ID: "<<msg.metadata.message_id<<endl;
 			}
-		}
-
-		
+		}		
     } 
 }
 
@@ -120,10 +118,7 @@ void Server::handleHeartbeat()
 				addrlen); 
 
 			cout<<"\tHeartbeat response sent"<<endl;
-		}
-		
-		
-        
+		}        
     }
 }
 
