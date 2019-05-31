@@ -22,10 +22,6 @@ int main(int argc, char* argv[])
 		return(1);
 	}
 
-    /*Client_udp *client = new Client_udp();
-    client->portNumber = atoi(argv[2]);
-    client->client_id = stoi(argv[3]);*/
-
     Client_udp *client = new Client_udp(argc, argv);
 
     return 0; 

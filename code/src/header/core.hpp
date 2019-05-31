@@ -10,12 +10,18 @@
 #include <string.h>
 
 #include "socket_helper.hpp"
+#include "semaphore.hpp"
 
 using namespace std;
 
 class Core
 {
-public:
-  void handleGetMessage(struct addr_info& addr);
-  void handleHeartbeat(struct addr_info& addr);
+public:  
+	virtual void handleGetMessage() {}
+	virtual void handleHeartbeat() {}
+	virtual void process_message(struct message&) {}
+  
+	struct addr_info* message_addr_info;
+	struct addr_info* heartbeat_addr_info;
+	int portNumber;
 };

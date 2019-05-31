@@ -1,99 +1,128 @@
 #pragma once
 #include <arpa/inet.h>
+#include <vector>
 
 #include "core.hpp"
+#define SENT_MESSAGES_BUFFER_SIZE 128
 
 class Client_udp : public Core
 {
-public:  
-  int portNumber;
-  int client_id;
-  size_t message_id;
-  status client_status;
-
 public:
-  Client_udp(int argc, char* argv[]);
-  void handleSendMessage(struct addr_info& addr);
-  void handleGetMessage(struct addr_info& addr);
-  void handleHeartbeat(struct addr_info& addr);
+    int client_id;
+    size_t message_id;
+    size_t start_message_id;
+    status client_status;
+    int interval;
+    int jitter;
+
+    Client_udp(int argc, char* argv[]);
+    void handleSendMessage();
+
+    void handleGetMessage() override;
+    void handleHeartbeat() override;
+    void process_message(struct message&);
+
+private:
+    vector<message> sent_messages;
+	std::mutex mutex;
 };
 
 Client_udp::Client_udp(int argc, char* argv[])
 {
     this->portNumber = atoi(argv[2]);
     this->client_id = stoi(argv[3]);
-    this->message_id = 0;
+    this->interval = atoi(argv[4]);
+    this->jitter = atoi(argv[5]);
+    this->start_message_id = atoi(argv[6]);
+    this->message_id = start_message_id;
     this->client_status = status_active;
 
-	struct addr_info* messageInfo = createUdpLiteSocket(this->portNumber, argv[1]);
-    struct addr_info* heartbeatInfo = createUdpLiteSocket(this->portNumber + 1, argv[1]);
+	message_addr_info = createUdpLiteSocket(this->portNumber, argv[1]);
+    heartbeat_addr_info = createUdpLiteSocket(this->portNumber + 1, argv[1]);
 
-    set_checksum_on_socket(messageInfo->fd, sizeof(struct metadata), UDPLITE_SEND_CSCOV);
-    set_timeout_on_socket(heartbeatInfo->fd, 33);
+    set_checksum_on_socket(message_addr_info->fd, sizeof(struct metadata), UDPLITE_SEND_CSCOV);
+    set_timeout_on_socket(heartbeat_addr_info->fd, 33);
 
-    std::thread thread_sendMessages(&Client_udp::handleSendMessage, this, ref(*messageInfo));
-    std::thread thread_getMessages(&Client_udp::handleGetMessage, this, ref(*messageInfo));
-    std::thread thread_heartbeat(&Client_udp::handleHeartbeat, this, ref(*heartbeatInfo));
+    std::thread thread_sendMessages(&Client_udp::handleSendMessage, this);
+    std::thread thread_getMessages(&Client_udp::handleGetMessage, this);
+    std::thread thread_heartbeat(&Client_udp::handleHeartbeat, this);
     
     thread_sendMessages.join();
     thread_getMessages.join();
     thread_heartbeat.join();
     
-    close(messageInfo->fd); 
-    close(heartbeatInfo->fd);
+    close(message_addr_info->fd); 
+    close(heartbeat_addr_info->fd);
 }
 
-void Client_udp::handleSendMessage(struct addr_info& addr)
+void Client_udp::handleSendMessage()
 {
-    int messageFD = addr.fd;
-    struct sockaddr_in* servAddr = addr.addr_info;
-    socklen_t addrlen;
-    addrlen = sizeof(struct sockaddr_in);
-    char buffer[MAX_BUF];
+    struct message msg;
 
-    struct metadata message_metadata;
-    
     for(;;){
-        memset(buffer, 0, MAX_BUF);
         message_id += 1;
-        message_metadata.client_id = client_id;
-        message_metadata.message_id = message_id;
-        message_metadata.status_id = status_active;
+        msg.metadata.client_id = client_id;
+        msg.metadata.message_id = message_id;
+        msg.metadata.status_id = client_status;
+        msg.metadata.message_type_id = message_type_data;
+        msg.content = "abcdef";
 
-        generate_message(buffer, message_metadata, "abcdef");
-        sendto(messageFD, (const char*)buffer, sizeof(buffer), 
-            0, (const struct sockaddr*)servAddr, 
-            addrlen); 
+        send_message(msg, message_addr_info->fd, message_addr_info->addr_info);
 
+        sent_messages.push_back(msg);
+        
+        //Check for vector size and remove unnecessary messages
+	    mutex.lock();
+        if (sent_messages.size() >= SENT_MESSAGES_BUFFER_SIZE * 2)
+        {
+            sent_messages.erase(sent_messages.begin(), sent_messages.begin() + SENT_MESSAGES_BUFFER_SIZE);
+        }
+        mutex.unlock();
+        
         cout<<"Message sent"<<endl;
-
-        sleep(5);
+        sleep(interval);
     }
 }
 
-void Client_udp::handleGetMessage(struct addr_info& addr)
+void Client_udp::handleGetMessage()
 {
-  int messageFD = addr.fd;
-  struct sockaddr_in* servAddr = addr.addr_info;
-  size_t n;
-  socklen_t addrlen;
-  char buffer[MAX_BUF];
+    int messageFD = message_addr_info->fd;
+    struct sockaddr_in* servAddr = message_addr_info->addr_info;
+    size_t n;
+    socklen_t addrlen;
+    char buffer[MAX_BUF];
+    struct message msg;
 
-  addrlen = sizeof(struct sockaddr_in);
+    addrlen = sizeof(struct sockaddr_in);
 
-  for(;;){
-      n = recvfrom(messageFD, (char*)buffer, MAX_BUF, 
+    for(;;){
+        n = recvfrom(messageFD, (char*)buffer, MAX_BUF, 
                   0, (struct sockaddr*)servAddr, 
                   &addrlen);
+        if (n == -1)
+        {
+            cout<<"Receiving message from server FAILED! errno: "<<errno<<" n: "<<n<<endl;
+        }
+        else
+        {
+            get_message_metadata(msg.metadata, buffer);
+			msg.content = get_message_content(buffer);
+			cout<<	"Message received: " <<endl\
+				<<	"\tClientID: "		<< msg.metadata.client_id <<endl\
+				<<	"\tMessageID: "		<< msg.metadata.message_id <<endl\
+				<<	"\tStatus: "		<< msg.metadata.status_id <<endl\
+				<<	"\tType: "			<< msg.metadata.message_type_id <<endl\
+				<< 	"\tContent: "		<< msg.content <<endl;
 
-        cout<<"Message from server: "<<buffer<<endl; 
+			process_message(msg);
+        }
     }
 }
 
-void Client_udp::handleHeartbeat(struct addr_info& addr)
+void Client_udp::handleHeartbeat()
 {
-    int heartbeatFD = addr.fd;
-    struct sockaddr_in* servAddr = addr.addr_info;
+    int heartbeatFD = heartbeat_addr_info->fd;
+    struct sockaddr_in* servAddr = heartbeat_addr_info->addr_info;
     size_t n;
     socklen_t addrlen;
     //Doesn't matter what the message is, we just want to send anything through
@@ -101,7 +130,7 @@ void Client_udp::handleHeartbeat(struct addr_info& addr)
     char buffer[MAX_BUF];
 
     addrlen = sizeof(struct sockaddr_in);    
-    
+
     for(;;){
         // send hello message to server 
         sendto(heartbeatFD, (const char*)msg.c_str(), msg.length(), 
@@ -118,9 +147,39 @@ void Client_udp::handleHeartbeat(struct addr_info& addr)
             cout<<"CONNECTION LOST!!"<<endl;
             throw "Connection lost";
         }
-        
+
         cout<<"\tHeartbeat response received: "<<buffer<<endl; 
 
         sleep(8);
     }
+}
+
+void Client_udp::process_message(struct message& msg)
+{
+    switch (msg.metadata.message_type_id) {
+        case message_type_data_request:
+            //Find message with that ID from vector of messages sent
+            mutex.lock();
+            for (auto it : sent_messages)
+            {
+                if (it.metadata.message_id == msg.metadata.message_id)
+                {
+                    msg = it;
+                    break;
+                }                
+            }
+            mutex.unlock();
+            
+            msg.metadata.client_id = client_id;
+            msg.metadata.status_id = client_status;
+            msg.metadata.message_type_id = message_type_data_request_response;
+
+            send_message(msg, message_addr_info->fd, message_addr_info->addr_info);
+
+            cout<<"Could not find the message with ID: "<<message_id<<endl;
+            break;
+        default:
+            throw "Unknown/Unhandled message type!";
+            break;
+	}
 }
