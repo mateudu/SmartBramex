@@ -27,7 +27,7 @@ public:
 private:
     vector<message> sent_messages;
 	std::mutex mutex;
-	string data_generator();
+	string generate_data();
 };
 
 Client_udp::Client_udp(int argc, char* argv[])
@@ -58,7 +58,7 @@ Client_udp::Client_udp(int argc, char* argv[])
     close(heartbeat_addr_info->fd);
 }
 
-string Client_udp::data_generator()
+string Client_udp::generate_data()
 {
     srand(time(NULL));
     float msg = rand() % 31 + 10; //10-30
@@ -82,7 +82,7 @@ void Client_udp::handleSendMessage()
         msg.metadata.message_id = message_id;
         msg.metadata.status_id = client_status;
         msg.metadata.message_type_id = message_type_data;
-        msg.content = data_generator();
+        msg.content = generate_data();
 
         send_message(msg, message_addr_info->fd, message_addr_info->addr_info);
 
