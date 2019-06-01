@@ -7,6 +7,9 @@ reset=`tput sgr0`
 port_number=6969
 server_ip="127.0.0.1"
 device_number=12345
+interval=2
+jitter=2
+start_message_id=3
 timeout_time=5s
 
 client_temp_file=$(mktemp)
@@ -16,7 +19,7 @@ echo "${yellow}Execute starting client which connects to not available server...
 echo "${cyan}Use ${client_temp_file} for temporary client output${reset}"
 
 echo "${cyan}Start client with device number ${device_number} and connect to server ${server_ip}:${port_number}${reset}"
-bin/client_udp $server_ip $port_number $device_number > $client_temp_file &
+bin/client_udp $server_ip $port_number $device_number $interval $jitter $start_message_id > $client_temp_file &
 client_pid=$(ps -C "client_udp" -o pid=)
 echo "${cyan}Client started with PID ${client_pid}${reset}"
 

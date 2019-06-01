@@ -17,8 +17,8 @@ using namespace std;
 
 int main(int argc, char* argv[]) 
 { 
-    if (argc < 4)	{
-		cout<<"Usage: %s ip_address port_number client_number "<<argv[0]<<endl;
+    if (argc < 7)	{
+		cout<<"Usage: %s ip_address port_number client_number interval jitter start_message_id "<<argv[0]<<endl;
 		return(1);
 	}
 
