@@ -1,3 +1,8 @@
+# Projekt: SmartBramex
+# Funkcja: Scenariusz testowy wysylki wiadomosci od klienta do serwera
+# Ostatnia zmiana: 02/06/2019
+# Autorzy: Mateusz Dudek
+
 red=`tput setaf 1`
 green=`tput setaf 2`
 yellow=`tput setaf 3`
@@ -42,7 +47,7 @@ grep -q "Content: " $server_temp_file \
     echo "${cyan}Expected message content and response detected in server logs${reset}"
 } || {
     echo "${red}Expected message content or response not detected in server logs${reset}"
-    # rm ${server_temp_file}
+    rm ${server_temp_file}
     rm ${client_temp_file}
     exit 1
 }
