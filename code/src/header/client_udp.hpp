@@ -1,6 +1,6 @@
 /* Projekt: SmartBramex
 -- Funkcja: Logika dla klienta - czujnika
--- Ostatnia zmiana: 01/06/2019
+-- Ostatnia zmiana: 02/06/2019
 -- Autorzy: Piotr Ogrodnik, Krzysztof Kasprzak, Sebastian Kamoda */
 
 #pragma once
@@ -27,7 +27,7 @@ public:
 
     void handleGetMessage() override;
     void handleHeartbeat() override;
-    void process_message(struct message&);
+    void process_message(struct message&) override;
 
 private:
     vector<message> sent_messages;
