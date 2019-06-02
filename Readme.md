@@ -24,8 +24,8 @@ Uruchamiane są następujące scenariusze testowe:
 * Uruchomienie klienta (bez serwera)
 * Uruchomienie serwera i klienta, wraz z weryfikacją wysłanych wiadomości
 
-# Dodanie skryptu Lua do Wiresharka
-Plik należy wkleić do folderu wskazanego przez Wireshark. Dla Ubuntu jest to: /home/{nazwaKonta}/.local/lib/wireshark/plugins, albo krócej $HOME/.wireshark/plugins
+## Dodanie skryptu Lua do Wiresharka
+Plik należy wkleić do folderu wskazanego przez Wireshark. Dla Ubuntu jest to: /home/{nazwaKonta}/.local/lib/wireshark/plugins
 
 Żeby dowiedzieć się do jakiego folderu wkleić dany plik należy:
 1. Odpalić Wireshark
