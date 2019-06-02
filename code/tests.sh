@@ -1,3 +1,8 @@
+# Projekt: SmartBramex
+# Funkcja: Scenariusze testowe rozwiazania
+# Ostatnia zmiana: 02/06/2019
+# Autorzy: Mateusz Dudek */
+
 red=`tput setaf 1`
 green=`tput setaf 2`
 yellow=`tput setaf 3`
