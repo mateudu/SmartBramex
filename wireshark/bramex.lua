@@ -5,6 +5,7 @@
 
 bramex_proto = Proto("bramex", "Bramex Protocol dissector")
 
+-- protocol fields definition
 local client_id = ProtoField.new("Client Id", "bramex.client_id", ftypes.UINT64)
 local message_id = ProtoField.new("Message Id", "bramex.message_id", ftypes.UINT64)
 local status = ProtoField.new("Status", "bramex.status", ftypes.INT32)
@@ -41,7 +42,6 @@ function bramex_proto.dissector(buffer, pinfo, tree)
 		local data = buffer(0):tvb()
 		subtree:add(content, data())
 	end
-	--add other payloads details
 end
 
 function bramex_proto.init()

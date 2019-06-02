@@ -1,3 +1,8 @@
+/* Projekt: SmartBramex
+-- Funkcja: Logika dla klienta - czujnika
+-- Ostatnia zmiana: 01/06/2019
+-- Autorzy: Piotr Ogrodnik, Krzysztof Kasprzak, Sebastian Kamoda */
+
 /*#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
