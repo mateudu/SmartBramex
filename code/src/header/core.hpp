@@ -1,3 +1,8 @@
+/* Projekt: SmartBramex
+-- Funkcja: Klasa abstrakcyjna dla klienta i serwera
+-- Ostatnia zmiana: 01/06/2019
+-- Autorzy: Piotr Ogrodnik, Mateusz Dudek */
+
 #pragma once
 #include <iostream>
 #include <sys/types.h>

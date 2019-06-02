@@ -1,3 +1,8 @@
+/* Projekt: SmartBramex
+-- Funkcja: Implementacja serwera - bramy radiowej
+-- Ostatnia zmiana: 01/06/2019
+-- Autorzy: Piotr Ogrodnik, Krzysztof Kasprzak, Sebastian Kamoda */
+
 #include <iostream>
 #include <fcntl.h>
 #include <sys/types.h>

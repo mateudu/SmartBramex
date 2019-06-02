@@ -1,3 +1,8 @@
+﻿/* Projekt: SmartBramex
+-- Funkcja: Logika naszego protokołu i gniazd
+-- Ostatnia zmiana: 01/06/2019
+-- Autorzy: Piotr Ogrodnik */
+
 #pragma once
 #include <iostream>
 #include <sys/types.h>

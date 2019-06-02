@@ -1,3 +1,9 @@
+/* Projekt: SmartBramex
+-- Funkcja: Implementacja semaforow
+-- Ostatnia zmiana: 01/06/2019
+-- Autorzy: Piotr Ogrodnik */
+
+
 #include <mutex>
 #include <condition_variable>
 

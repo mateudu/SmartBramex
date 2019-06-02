@@ -1,3 +1,8 @@
+﻿/* Projekt: SmartBramex
+-- Funkcja: Implementacja naszego protokołu
+-- Ostatnia zmiana: 01/06/2019
+-- Autorzy: Piotr Ogrodnik */
+
 #include "header/socket_helper.hpp"
 
 struct addr_info* createUdpLiteSocket(int port, char *address){
