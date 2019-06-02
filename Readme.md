@@ -19,6 +19,15 @@
 ## Scenariusze testowe
 Scenariusze testowe można uruchomić za pomocą polecenia `sh tests.sh`.
 
+## Dodanie skryptu Lua do Wiresharka
+Plik należy wkleić do folderu wskazanego przez Wireshark. Dla Ubuntu jest to: /home/{nazwaKonta}/.local/lib/wireshark/plugins, albo krócej $HOME/.wireshark/plugins
+
+Żeby dowiedzieć się do jakiego folderu wkleić dany plik należy:
+1. Odpalić Wireshark
+2. Wybrać z ekranu głównego zakładkę Help -> About Wireshark
+3. Wybrać zakładkę Folders
+4. Folder w którym powinny znajdować się dodatkowe pliki znajduje się pod nazwą Personal Lua Plugins
+
 Uruchamiane są następujące scenariusze testowe:
 * Uruchomienie serwera
 * Uruchomienie klienta (bez serwera)
