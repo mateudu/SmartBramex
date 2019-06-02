@@ -37,7 +37,7 @@ echo "${cyan}Close client[${client_pid}] and server[${server_pid}]"
 kill $client_pid
 kill $server_pid
 
-grep -q "Content: abcdef" $server_temp_file \
+grep -q "Content: " $server_temp_file \
     && grep -q "ClientID: ${device_number}" $server_temp_file && {
     echo "${cyan}Expected message content and response detected in server logs${reset}"
 } || {
