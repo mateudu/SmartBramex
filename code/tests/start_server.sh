@@ -16,7 +16,7 @@ echo "${cyan}Start server at ${PORT_NUMBER} port${reset}"
 timeout -k $timeout_time $timeout_time bin/server $PORT_NUMBER > $server_temp_file
 echo "${cyan}Server started and closed${reset}"
 
-grep -q "IPROTO_UDPLITE" /tmp/tmp.LB8ViGSMQK && {
+grep -q "IPROTO_UDPLITE" $server_temp_file && {
     echo "${cyan}Expected log detected in server logs${reset}"
 } || {
     echo "${red}Expected log not detected in server logs${reset}"
